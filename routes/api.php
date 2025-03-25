@@ -4,6 +4,8 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserPreferenceController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\SportMonksController;
+
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -29,6 +31,10 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [UserController::class, 'logout']);
     Route::get('/subscription/status', [UserController::class, 'checkSubscription'])->name('subscription.status');
     Route::post('/subscription/renew', [UserController::class, 'renewSubscription']);
+    Route::get('/teams/country/{country_id}', [SportMonksController::class, 'getTeamsByCountry']);
+    Route::get('/leagues', [SportMonksController::class, 'getLeagues']);
+    Route::get('/countries', [SportMonksController::class, 'getCountries']);
+    Route::post('/user/team', [UserController::class, 'saveUserTeam']);
 
 });
 

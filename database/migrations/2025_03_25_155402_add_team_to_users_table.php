@@ -13,9 +13,9 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('user_preferences', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::table('users', function (Blueprint $table) {
+            //
+            $table->unsignedBigInteger('team_id')->nullable()->after('plan'); // Store selected club
         });
     }
 
@@ -26,6 +26,8 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('user_preferences');
+        Schema::table('users', function (Blueprint $table) {
+            //
+        });
     }
 };

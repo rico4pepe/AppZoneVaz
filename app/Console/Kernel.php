@@ -21,6 +21,12 @@ class Kernel extends ConsoleKernel
 
           // Run auto-renewal daily at 12:01 AM
          $schedule->command('subscriptions:auto-renew')->dailyAt('00:01'); // Runs at 12:01 AM daily
+
+         //Fetch leagues from SportMonks every Daily
+            $schedule->command('fetch:leagues')->daily();
+
+        // Fetch countries from SportMonks every Sunday at 8 AM
+        $schedule->command('fetch:countries')->weeklyOn(0, '08:00');
     }
 
 

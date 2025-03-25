@@ -236,21 +236,17 @@ public function stopAutoRenewal()
     ]);
 }
 
-public function saveUserClub(Request $request)
+public function saveUserTeam(Request $request)
 {
     $request->validate([
-        'club' => 'required|string',
+        'team_id' => 'required|integer', // Ensure team_id is provided
     ]);
 
     $user = Auth::user();
-
-    if (!$user) {
-        return response()->json(['message' => 'User  not authenticated.'], 401);
-    }
-    $user->club = $request->club;
+    $user->team_id = $request->team_id;
     $user->save();
 
-    return response()->json(['message' => 'Club selection saved successfully!']);
+    return response()->json(['message' => 'Team selection saved successfully!']);
 }
 
 
