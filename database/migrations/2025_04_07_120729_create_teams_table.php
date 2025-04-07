@@ -13,9 +13,14 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::table('users', function (Blueprint $table) {
-            //
-            $table->unsignedBigInteger('team_id')->nullable()->after('plan'); // Store selected club
+        Schema::create('teams', function (Blueprint $table) {
+            $table->id();
+            $table->string('team_id');
+            $table->foreignId('league_id')->constrained('leagues')->onDelete('cascade');
+            $table->string('season');
+            $table->string('country');
+            $table->string('code');
+            $table->timestamps();
         });
     }
 
@@ -26,8 +31,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::table('users', function (Blueprint $table) {
-            //
-        });
+        Schema::dropIfExists('teams');
     }
 };

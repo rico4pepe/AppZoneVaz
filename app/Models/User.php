@@ -19,7 +19,8 @@ class User extends Authenticatable
         'expires_at',
         'phone_number',
         'token',
-        'auto_renew'
+        'auto_renew',
+        'team_id'
     ];
 
     protected $casts = [

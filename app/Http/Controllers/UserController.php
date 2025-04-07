@@ -69,6 +69,11 @@ class UserController extends Controller
         }
     }
 
+      // Prevent multiple logins for both phone_number and token users
+      if ($user->tokens()->count() > 0) {
+        return response()->json(['message' => 'You are already logged in on another device. Please log out first.'], 403);
+    }
+
    // Generate an API token
    $token = $user->createToken('auth_token')->plainTextToken;
 
@@ -214,6 +219,7 @@ public function getRenewalLogs()
     }
 
     $logs = $user->subscriptionRenewalLogs()->orderBy('created_at', 'desc')->get();
+   // $logs = User::with('subscriptionRenewalLogs')->orderBy('created_at', 'desc')->get();
 
     return response()->json($logs);
 }

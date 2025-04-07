@@ -5,19 +5,21 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class League extends Model
+class Team extends Model
 {
     use HasFactory;
 
     protected $fillable = [
         'name',
-        'sportmonks_id'
-
+        'team_id',
+        'league_id',
+        'season',
+        'country',
+        'code'
     ];
 
-
-    public function teams()
+    public function league()
     {
-        return $this->hasMany(Team::class);
+        return $this->belongsTo(League::class);
     }
 }
