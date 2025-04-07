@@ -47,6 +47,42 @@ class ContentController extends Controller
             ]);
         }
 
+        //  return response()->json($content->load('options'), 201);
         return redirect()->route('admin.contents.index')->with('success', 'Content created.');
     }
+
+
+    public function update(Request $request, Content $content)
+{
+    $validated = $request->validate([
+        'title' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'type' => 'required|in:poll,quiz,trivia',
+        'difficulty' => 'nullable|in:easy,medium,hard',
+        'league_id' => 'nullable|exists:leagues,id',
+        'team_id' => 'nullable|exists:teams,id',
+        'published_at' => 'nullable|date',
+        'options' => 'required|array|min:2',
+        'options.*.text' => 'required|string',
+        'options.*.is_correct' => 'nullable|boolean',
+    ]);
+
+    // Update main content fields
+    $content->update($request->except('options'));
+
+    // Delete existing options
+    $content->options()->delete();
+
+    // Re-create new options
+    foreach ($request->options as $opt) {
+        $content->options()->create([
+            'option_text' => $opt['text'],
+            'is_correct' => $opt['is_correct'] ?? false,
+        ]);
+    }
+
+        //  return response()->json($content->load('options'), 201);
+    return redirect()->route('admin.contents.index')->with('success', 'Content updated.');
+}
+
 }
