@@ -20,4 +20,10 @@ class League extends Model
     {
         return $this->hasMany(Team::class);
     }
+
+    public function contents()
+{   
+    return $this->hasMany(Content::class);
+}
+
 }

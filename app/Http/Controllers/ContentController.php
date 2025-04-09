@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Content;
 use App\Models\ContentOption;
+use App\Models\League;
+use App\Models\Team;
 
 class ContentController extends Controller
 {
@@ -85,4 +87,31 @@ class ContentController extends Controller
     return redirect()->route('admin.contents.index')->with('success', 'Content updated.');
 }
 
+
+
+public function suggestContentPlacement()
+{
+    // Get leagues with less than a threshold amount of content
+    $suggestedLeagues = League::withCount('contents')
+        ->having('contents_count', '<', 5) // Threshold of 5 contents per league
+        ->get();
+
+    // Get teams with less than a threshold amount of content
+    $suggestedTeams = Team::withCount('contents')
+        ->having('contents_count', '<', 3) // Threshold of 3 contents per team
+        ->get();
+
+    // If no leagues or teams are found with low content, return all available leagues and teams
+    if ($suggestedLeagues->isEmpty()) {
+        $suggestedLeagues = League::all();
+    }
+    if ($suggestedTeams->isEmpty()) {
+        $suggestedTeams = Team::all();
+    }
+
+    return response()->json([
+        'suggested_leagues' => $suggestedLeagues,
+        'suggested_teams' => $suggestedTeams,
+    ]);
+}
 }

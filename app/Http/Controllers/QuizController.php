@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Content;
 use App\Models\ContentOption;
 use App\Models\UserActivity;
+use App\Models\ContentStat;
+use App\Models\UserContentStat;
 use Illuminate\Http\Request;
 
 class QuizController extends Controller
@@ -29,8 +31,12 @@ class QuizController extends Controller
             return response()->json(['message' => 'You already completed this quiz.'], 403);
         }
 
-        // Fetch correct options
-        $correctOptions = $content->options()->where('is_correct', true)->pluck('id')->toArray();
+        // ✅ Explicit use of ContentOption
+        $correctOptions = ContentOption::where('content_id', $content->id)
+            ->where('is_correct', true)
+            ->pluck('id')
+            ->toArray();
+
         $submittedAnswers = collect($request->answers);
         $correctCount = $submittedAnswers->whereIn('option_id', $correctOptions)->count();
 
@@ -55,7 +61,8 @@ class QuizController extends Controller
     }
 
 
-    public function submit(Request $request, Content $content)
+
+    public function submitSingleAnswer(Request $request, Content $content)
 {
     $user = auth()->user();
 

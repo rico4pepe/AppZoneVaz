@@ -22,4 +22,10 @@ class Team extends Model
     {
         return $this->belongsTo(League::class);
     }
+
+    public function contents()
+{
+    return $this->hasMany(Content::class);
+}
+
 }
