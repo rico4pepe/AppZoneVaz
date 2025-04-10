@@ -124,6 +124,11 @@
           <i class="fas fa-question-circle"></i> Content
         </a>
       </li>
+       <li class="nav-item">
+        <a href="#" class="nav-link active">
+          <i class="fas fa-question-circle"></i> Content
+        </a>
+      </li>
       <li class="nav-item">
         <a href="#" class="nav-link">
           <i class="fas fa-trophy"></i> Leaderboards
