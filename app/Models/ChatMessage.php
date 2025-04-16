@@ -24,4 +24,9 @@ class ChatMessage extends Model
     {
         return $this->belongsTo(Event::class);
     }
+
+    public function reports()
+{
+    return $this->hasMany(Report::class, 'message_id');
+}
 }

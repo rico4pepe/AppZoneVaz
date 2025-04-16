@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\UserPreferenceController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\SportMonksController;
+use App\Http\Controllers\ChatController;
 
 /*
 |--------------------------------------------------------------------------
@@ -35,6 +36,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/leagues', [SportMonksController::class, 'getLeagues']);
     Route::get('/countries', [SportMonksController::class, 'getCountries']);
     Route::post('/user/team', [UserController::class, 'saveUserTeam']);
+    Route::get('/chat', [ChatController::class, 'fetchMessages']);
+    Route::post('/chat', [ChatController::class, 'sendMessage']);
 
 });
 

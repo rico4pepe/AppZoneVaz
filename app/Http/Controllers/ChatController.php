@@ -9,6 +9,7 @@ use App\Models\Report;
 use App\Models\User;
 use App\Models\ChatBan;
 use App\Models\UserWarning;
+use App\Models\Mention;
 
 
 class ChatController extends Controller
@@ -21,12 +22,29 @@ class ChatController extends Controller
             'event_id' => 'nullable|exists:events,id',
         ]);
 
+        preg_match_all('/@(\w+)/', $validated['message'], $matches);
+        $usernames = $matches[1] ?? [];
+
         $message = ChatMessage::create([
             'user_id' => Auth::id(),
             'event_id' => $validated['event_id'] ?? null,
             'message' => $validated['message'],
             'is_hidden' => false,
         ]);
+
+
+        
+foreach ($usernames as $username) {
+    $mentionedUser = \App\Models\User::where('username', $username)->first();
+    if ($mentionedUser) {
+        Mention::create([
+            'chat_message_id' => $message->id,
+            'mentioned_user_id' => $mentionedUser->id,
+        ]);
+
+        // Optional: send a notification, store alert, etc.
+    }
+}
 
         return response()->json([
             'message' => 'Message sent',
@@ -50,84 +68,64 @@ class ChatController extends Controller
         return response()->json($messages);
     }
 
-    public function reportMessage(Request $request, $messageId)
-{
-    $validated = $request->validate([
-        'reason' => 'required|string|max:255',
-    ]);
 
-    $message = ChatMessage::findOrFail($messageId);
 
-    // Check if the user has already reported this message
-    if (Report::where('message_id', $messageId)->where('reporter_id', Auth::id())->exists()) {
-        return response()->json(['message' => 'You have already reported this message.'], 403);
+    public function hideMessage($messageId)
+    {
+        // Check if the user is an admin
+        if (!Auth::user()->is_admin) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $message = ChatMessage::findOrFail($messageId);
+        $message->update(['is_hidden' => true]);
+
+        return response()->json(['message' => 'Message hidden successfully.']);
+    }   
+
+    public function banUser(Request $request, $userId)
+    {
+        // Check if the user is an admin
+        if (!Auth::user()->is_admin) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $validated = $request->validate([
+            'reason' => 'required|string|max:255',
+            'banned_until' => 'nullable|date',
+        ]);
+
+        $user = User::findOrFail($userId);
+
+        // Create a ban record
+        ChatBan::create([
+            'user_id' => $userId,
+            'reason' => $validated['reason'],
+            'banned_until' => $validated['banned_until'] ?? null,
+            'issued_by' => Auth::id(),
+        ]);
+
+        return response()->json(['message' => 'User banned successfully.']);
     }
 
-    Report::create([
-        'message_id' => $messageId,
-        'reporter_id' => Auth::id(),
-        'reason' => $validated['reason'],
-    ]);
+    public function issueWarning(Request $request)
+    {
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'reason' => 'required|string|max:500',
+        ]);
 
-    return response()->json(['message' => 'Message reported successfully.']);
-}
+        $warning = UserWarning::create([
+            'user_id' => $validated['user_id'],
+            'issued_by' => Auth::id(),
+            'reason' => $validated['reason'],
+        ]);
 
-public function hideMessage($messageId)
-{
-    // Check if the user is an admin
-    if (!Auth::user()->is_admin) {
-        return response()->json(['message' => 'Unauthorized'], 403);
+        return response()->json([
+            'message' => 'Warning issued successfully',
+            'data' => $warning
+        ]);
     }
-
-    $message = ChatMessage::findOrFail($messageId);
-    $message->update(['is_hidden' => true]);
-
-    return response()->json(['message' => 'Message hidden successfully.']);
-}
-
-public function banUser(Request $request, $userId)
-{
-    // Check if the user is an admin
-    if (!Auth::user()->is_admin) {
-        return response()->json(['message' => 'Unauthorized'], 403);
-    }
-
-    $validated = $request->validate([
-        'reason' => 'required|string|max:255',
-        'banned_until' => 'nullable|date',
-    ]);
-
-    $user = User::findOrFail($userId);
-
-    // Create a ban record
-    ChatBan::create([
-        'user_id' => $userId,
-        'reason' => $validated['reason'],
-        'banned_until' => $validated['banned_until'] ?? null,
-        'issued_by' => Auth::id(),
-    ]);
-
-    return response()->json(['message' => 'User banned successfully.']);
-}
-
-public function issueWarning(Request $request)
-{
-    $validated = $request->validate([
-        'user_id' => 'required|exists:users,id',
-        'reason' => 'required|string|max:500',
-    ]);
-
-    $warning = UserWarning::create([
-        'user_id' => $validated['user_id'],
-        'issued_by' => Auth::id(),
-        'reason' => $validated['reason'],
-    ]);
-
-    return response()->json([
-        'message' => 'Warning issued successfully',
-        'data' => $warning
-    ]);
-}
 
 
 
@@ -138,6 +136,9 @@ public function issueWarning(Request $request)
 
         return response()->json($warnings);
     }
+
+
+
 
 }
 

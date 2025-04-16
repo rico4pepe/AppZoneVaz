@@ -103,6 +103,7 @@
       color: white;
     }
   </style>
+  @livewireStyles
 </head>
 <body>
   <!-- Sidebar -->
@@ -115,22 +116,24 @@
     
     <ul class="nav flex-column mt-3">
       <li class="nav-item">
-        <a href="#" class="nav-link">
+            <a href="#" class="nav-link">
+        
           <i class="fas fa-tachometer-alt"></i> Dashboard
         </a>
       </li>
       <li class="nav-item">
-        <a href="#" class="nav-link active">
+           <a href="{{ route('admin.dashboard') }}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
           <i class="fas fa-question-circle"></i> Content
         </a>
       </li>
+
        <li class="nav-item">
-        <a href="#" class="nav-link active">
-          <i class="fas fa-question-circle"></i> Content
+        <a href="{{ route('admin.contentlist') }}" class="nav-link {{ request()->routeIs('admin.contentlist') ? 'active' : '' }}">
+          <i class="fas fa-question-circle"></i> Content List
         </a>
       </li>
       <li class="nav-item">
-        <a href="#" class="nav-link">
+     <a href="{{ route('admin.leaderboard') }}" class="nav-link {{ request()->routeIs('admin.leaderboard') ? 'active' : '' }}">
           <i class="fas fa-trophy"></i> Leaderboards
         </a>
       </li>
@@ -140,7 +143,7 @@
         </a>
       </li>
       <li class="nav-item">
-        <a href="#" class="nav-link">
+       <a href="{{ route('admin.chatmoderation') }}" class="nav-link {{ request()->routeIs('admin.chatmoderation') ? 'active' : '' }}">
           <i class="fas fa-user-shield"></i> Moderation
         </a>
       </li>
@@ -156,3 +159,18 @@
       </li>
     </ul>
   </div>
+  
+  @yield('content')
+  <!-- Main Content -->
+  
+
+  <!-- Bootstrap JS Bundle with Popper -->
+  @stack('scripts')
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+  
+  <!-- Custom JS -->
+
+@livewireScripts
+
+</body>
+</html>

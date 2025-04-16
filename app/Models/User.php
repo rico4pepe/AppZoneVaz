@@ -5,7 +5,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
-
+use Illuminate\Database\Eloquent\Model;
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
@@ -20,7 +20,9 @@ class User extends Authenticatable
         'phone_number',
         'token',
         'auto_renew',
-        'team_id'
+        'team_id',
+        'club',
+        'bio',
     ];
 
     protected $casts = [
@@ -32,9 +34,9 @@ class User extends Authenticatable
      * Relationship: A user has many subscription renewal logs.
      */
     public function subscriptionRenewalLogs()
-    {
-        return $this->hasMany(SubscriptionRenewal::class);
-    }
+{
+    return $this->hasMany(SubscriptionRenewal::class);
+}
 
     public function activities()
 {

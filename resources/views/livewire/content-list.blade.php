@@ -1,6 +1,6 @@
-@extends('layouts.admin.layout')
 
-@section('content')
+<div class="main-content">
+
 <div class="container mt-4">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h5>Content List</h5>
@@ -26,23 +26,23 @@
         <tbody>
             @forelse($contents as $content)
                 <tr>
-                    <td>{{ \$content->title }}</td>
-                    <td>{{ ucfirst(\$content->type) }}</td>
-                    <td>{{ \$content->published_at ? \$content->published_at->format('d M Y, h:i A') : '—' }}</td>
+                    <td>{{ $content->title }}</td>
+                    <td>{{ ucfirst($content->type) }}</td>
+                    <td>{{ $content->published_at ? $content->published_at->format('d M Y, h:i A') : '—' }}</td>
                     <td>
-                        <span class="badge bg-{{ \$content->is_featured ? 'success' : 'secondary' }}">
-                            {{ \$content->is_featured ? 'Yes' : 'No' }}
+                        <span class="badge bg-{{ $content->is_featured ? 'success' : 'secondary' }}">
+                            {{ $content->is_featured ? 'Yes' : 'No' }}
                         </span>
                     </td>
                     <td>
-                        <span class="badge bg-{{ \$content->is_active ? 'primary' : 'danger' }}">
-                            {{ \$content->is_active ? 'Active' : 'Inactive' }}
+                        <span class="badge bg-{{ $content->is_active ? 'primary' : 'danger' }}">
+                            {{ $content->is_active ? 'Active' : 'Inactive' }}
                         </span>
                     </td>
                     <td>
-                        <button class="btn btn-sm btn-info" wire:click="edit({{ \$content->id }})">Edit</button>
-                        <button class="btn btn-sm btn-secondary" wire:click="viewStats({{ \$content->id }})">Stats</button>
-                        <button class="btn btn-sm btn-danger" wire:click="confirmDelete({{ \$content->id }})">Delete</button>
+                        <button class="btn btn-sm btn-info" wire:click="edit({{ $content->id }})">Edit</button>
+                        <button class="btn btn-sm btn-secondary" wire:click="viewStats({{ $content->id }})">Stats</button>
+                        <button class="btn btn-sm btn-danger" wire:click="confirmDelete({{ $content->id }})">Delete</button>
                     </td>
                 </tr>
             @empty
@@ -53,6 +53,7 @@
         </tbody>
     </table>
 
-    {{ \$contents->links() }}
+    {{ $contents->links() }}
 </div>
-@endsection
+</div>
+

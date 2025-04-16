@@ -7,8 +7,9 @@ use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\SubscriptionRenewal;
-
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 class UserController extends Controller
 {
     /**
@@ -53,43 +54,82 @@ class UserController extends Controller
 
 
     public function login(Request $request)
-{
-    $request->validate([
-        'phone_number' => 'required|string|exists:users,phone_number',
-        'token' => 'nullable|string'
-    ]);
-
-    // Fetch user by phone_number
-    $user = User::where('phone_number', $request->phone_number)->first();
-
-    // If user is using WiFi, validate the token
-    if ($request->has('token')) {
-        if ($user->token !== $request->token) {
+    {
+        $request->validate([
+            'phone_number' => 'required|string|exists:users,phone_number',
+            'token' => 'nullable|string'
+        ]);
+    
+        // Fetch user
+        $user = User::where('phone_number', $request->phone_number)->first();
+    
+        // Token verification (WiFi use)
+        if ($request->has('token') && $user->token !== $request->token) {
             return response()->json(['message' => 'Invalid token'], 401);
         }
+    
+        // Prevent login if already logged in on another device
+        if ($user->tokens()->count() > 0) {
+            return response()->json([
+                'message' => 'Already logged in on another device. Please log out first.'
+            ], 403);
+        }
+    
+        // Generate personal access token (for API use)
+        $token = $user->createToken('auth_token')->plainTextToken;
+    
+        // 🔥 FIX: Laravel Sanctum doesn’t auto-login to session, so if you want session-based login:
+        auth()->login($user); // create Laravel session
+    
+        // Now redirect to dashboard (HTML)
+        return redirect()->route('dashboard'); // You don't need `->with('token')` here unless you use it
     }
 
-      // Prevent multiple logins for both phone_number and token users
-      if ($user->tokens()->count() > 0) {
-        return response()->json(['message' => 'You are already logged in on another device. Please log out first.'], 403);
+    public function updateUserPreference(Request $request)
+    {
+        $request->validate([
+            'username' => 'required|string|max:255',
+            'team_id' => 'required|integer',
+        ]);
+    
+        $userId = auth()->id();
+    
+        if ($userId) {
+
+            DB::enableQueryLog();
+
+            DB::table('users')
+                ->where('id', $userId)
+                ->update([
+                    'name' => $request->username,
+                    'team_id' => $request->team_id,
+                    'updated_at' => now(),
+                ]);
+
+                  // Get the executed queries
+        $queries = DB::getQueryLog();
+        
+        // Log the queries to Laravel's log file
+        Log::info('User preference update query:', $queries);
+    
+                return redirect()->route('dashboard')->with('success', 'Fan profile updated successfully!');
+        }
+    
+        return redirect()->back()->with('error', 'User not authenticated.');
     }
-
-   // Generate an API token
-   $token = $user->createToken('auth_token')->plainTextToken;
-
-   return response()->json([
-       'message' => 'Login successful',
-       'user' => $user,
-       'access_token' => $token,
-       'token_type' => 'Bearer'
-   ]);
-}
+    /**
+     * Logout the user.
+     */    
 
 public function logout(Request $request)
 {
-    $request->user()->tokens()->delete();
+    $request->user()->tokens()->delete(); // API token logout
 
-    return response()->json(['message' => 'Logged out successfully']);
+    auth()->logout(); // session logout
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
+
+    return redirect()->route('login');
 }
 
  /**
@@ -138,17 +178,17 @@ public function logout(Request $request)
         }
 
            // Validate the purchase code
-    $newPlan = $this->validatePurchaseCode($request->purchase_code);
+         $newPlan = $this->validatePurchaseCode($request->purchase_code);
 
-    if (!$newPlan) {
-        return response()->json(['message' => 'Invalid or expired purchase code'], 400);
-    }
+        if (!$newPlan) {
+             return response()->json(['message' => 'Invalid or expired purchase code'], 400);
+        }
 
             // Store the previous expiry date before renewal
-    $previousExpiresAt = $user->expires_at ?? Carbon::now();
+            $previousExpiresAt = $user->expires_at ?? Carbon::now();
 
         // Extend subscription based on current plan
-        $subscriptionDuration = [
+            $subscriptionDuration = [
             'Daily' => Carbon::now()->addDay(),
             'Weekly' => Carbon::now()->addWeek(),
             'Monthly' => Carbon::now()->addMonth(),
@@ -158,23 +198,23 @@ public function logout(Request $request)
         $user->subscribed_at = Carbon::now();
         $user->expires_at = $subscriptionDuration[$user->plan];
         // Using update() instead of save()
-    $user->subscribed_at = Carbon::now();
-    $user->expires_at = $subscriptionDuration[$user->plan] ?? Carbon::now()->addDay();
-    $user->save();
+        $user->subscribed_at = Carbon::now();
+        $user->expires_at = $subscriptionDuration[$user->plan] ?? Carbon::now()->addDay();
+        $user->save();
 
 
-    // Log the renewal in the subscription_renewals table
-    SubscriptionRenewal::create([
-        'user_id' => $user->id,
-        'purchase_code' => $request->purchase_code,
-        'previous_expires_at' => $previousExpiresAt,
-        'new_expires_at' => $user->expires_at
-    ]);
+            // Log the renewal in the subscription_renewals table
+            SubscriptionRenewal::create([
+                'user_id' => $user->id,
+                'purchase_code' => $request->purchase_code,
+                'previous_expires_at' => $previousExpiresAt,
+                'new_expires_at' => $user->expires_at
+            ]);
 
-        return response()->json([
-            'message' => 'Subscription renewed successfully',
-            'new_expires_at' => $user->expires_at
-        ], 200);
+                return response()->json([
+                    'message' => 'Subscription renewed successfully',
+                    'new_expires_at' => $user->expires_at
+                ], 200);
     }
 
     /**
@@ -234,7 +274,7 @@ public function stopAutoRenewal()
 
     // Disable auto-renewal
     $user->auto_renew = false;
-    $user->save();
+    auth()->$user->save();
 
     return response()->json([
         'message' => 'Auto-renewal has been disabled successfully.',
