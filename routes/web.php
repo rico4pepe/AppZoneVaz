@@ -45,14 +45,20 @@ Route::get('/home', function () {
     return view('index');
 })->name('login')->middleware('guest');
 
-
 Route::post('/login', [UserController::class, 'login'])->name('login.custom');
+
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware('auth')->name('dashboard');
 
 
 Route::middleware(['auth'])->group(function () {
+
+
+    //using higher order funcction
+    Route::get('/polls', fn() => view('polls'))->name('polls');
+    Route::get('/quizzes', fn() => view('quizz'))->name('quizzes');
+   // Route::get('/trivia', fn() => view('trivia'))->name('trivia');
     Route::post('/user/setup-preference', [UserController::class, 'updateUserPreference'])->name('user.setup-preference');
 });
 

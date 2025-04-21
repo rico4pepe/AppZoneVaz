@@ -7,8 +7,16 @@ export default function ChatApp({ userId }) {
     const [minimized, setMinimized] = useState(false);
     const [toast, setToast] = useState(null);
 
+    const token = localStorage.getItem('auth_token');
+
     useEffect(() => {
-        fetch(`/api/chat?event_id=${eventId || ''}`)
+        if (!token) return;
+        fetch(`/api/chat?event_id=${eventId || ''}`, {
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        })
             .then(res => res.json())
             .then(newMessages => {
                 setMessages(newMessages);
@@ -38,24 +46,22 @@ export default function ChatApp({ userId }) {
     const parseMentions = (text) => {
         return text.replace(/@(\w+)/g, '<span class="text-primary fw-bold">@$1</span>');
     };
-    
+
     return (
-        <div className="chat-wrapper" style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 9999, width: 500 }}>
-            <div className="card shadow">
+        <div className="chat-wrapper" style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 9999 }}>
+            <div className="card shadow" style={{ width: '100%', maxWidth: '500px' }}>
                 <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <span>Fan Zone Chat</span>
-                            <select className="form-select" title='select event to chat' value={eventId || ''} onChange={e => setEventId(e.target.value || null)}>
-                            <option value="">🌍 Global Chat</option>
-                            <option value="1">Event: Arsenal vs Chelsea</option>
-                            <option value="2">Event: Nigeria vs Ghana</option>
-                            {/* You can dynamically load from `/api/events` later */}
-                        </select>
-                    <button className="btn btn-sm btn-light" title='hide' onClick={() => setMinimized(!minimized)}>
+                    <select className="form-select" title="select event to chat" value={eventId || ''} onChange={e => setEventId(e.target.value || null)}>
+                        <option value="">🌍 Global Chat</option>
+                        <option value="1">Event: Arsenal vs Chelsea</option>
+                        <option value="2">Event: Nigeria vs Ghana</option>
+                        {/* You can dynamically load from `/api/events` later */}
+                    </select>
+                    <button className="btn btn-sm btn-light" title="hide" onClick={() => setMinimized(!minimized)}>
                         {minimized ? '🔼' : '🔽'}
                     </button>
                 </div>
-
-                
 
                 {!minimized && (
                     <>
@@ -80,8 +86,8 @@ export default function ChatApp({ userId }) {
                 )}
             </div>
 
-                 {/* Simple Toast Notification */}
-                 {toast && (
+            {/* Simple Toast Notification */}
+            {toast && (
                 <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 1050 }}>
                     <div className="toast show align-items-center text-bg-primary border-0">
                         <div className="d-flex">

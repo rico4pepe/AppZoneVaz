@@ -86,7 +86,7 @@
               </div>
 
               {{-- Conditionally show Options section only for Quizzes --}}
-              @if ($type === 'quiz')
+              @if ($type === 'quiz' || $type === 'poll')
                   <div class="mb-3">
                     <label class="form-label">Options</label>
                     @error('options') <span class="text-danger d-block mb-2">{{ $message }}</span> @enderror
@@ -99,13 +99,15 @@
                              {{-- Bind option text input --}}
                             <input type="text" class="form-control me-2 @error('options.'.$index.'.text') is-invalid @enderror" placeholder="Option {{ $index + 1 }}" wire:model="options.{{ $index }}.text">
 
-                            {{-- Radio button to select the correct answer --}}
-                            <div class="form-check me-2">
-                                <input class="form-check-input" type="radio" name="correctOption" id="correct_option_{{ $index }}" value="{{ $index }}" wire:model="correctOption">
-                                <label class="form-check-label" for="correct_option_{{ $index }}">
-                                  Correct
-                                </label>
-                              </div>
+                                    {{-- Show correct answer radio only for quizzes --}}
+                                    @if ($type === 'quiz')
+                                      <div class="form-check me-2">
+                                        <input class="form-check-input" type="radio" name="correctOption" id="correct_option_{{ $index }}" value="{{ $index }}" wire:model="correctOption">
+                                        <label class="form-check-label" for="correct_option_{{ $index }}">
+                                          Correct
+                                        </label>
+                                      </div>
+                                    @endif
 
                              {{-- Button to remove the option --}}
                             <button type="button" class="btn btn-outline-danger btn-sm" wire:click.prevent="removeOption({{ $index }})" title="Remove Option">

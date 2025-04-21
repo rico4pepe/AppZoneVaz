@@ -78,11 +78,19 @@ class UserController extends Controller
         // Generate personal access token (for API use)
         $token = $user->createToken('auth_token')->plainTextToken;
     
+         // Check if it's an API request
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json([
+                'user' => $user,
+                'token' => $token,
+                'redirect' => route('dashboard')
+            ]);
+        }
         // 🔥 FIX: Laravel Sanctum doesn’t auto-login to session, so if you want session-based login:
         auth()->login($user); // create Laravel session
     
         // Now redirect to dashboard (HTML)
-        return redirect()->route('dashboard'); // You don't need `->with('token')` here unless you use it
+        return redirect()->route('dashboard')->with('auth_token', $token);
     }
 
     public function updateUserPreference(Request $request)

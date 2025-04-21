@@ -63,36 +63,139 @@ class QuizController extends Controller
 
 
     public function submitSingleAnswer(Request $request, Content $content)
-{
-    $user = auth()->user();
+    {
+        $request->validate([
+            'option_id' => 'required|integer|exists:content_options,id',
+        ]);
 
-    $correctOption = $content->options()->where('is_correct', true)->first();
-    $selectedOption = $request->input('option');
+        $user = auth()->user();
 
-    $isCorrect = $selectedOption == $correctOption->id;
+        // Check if already answered
+        $already = UserActivity::where('user_id', $user->id)
+            ->where('content_id', $content->id)
+            ->where('activity_type', 'quiz_answered')
+            ->exists();
 
-    // Store user attempt
-    UserContentStat::create([
-        'user_id' => $user->id,
-        'content_id' => $content->id,
-        'answered_correctly' => $isCorrect,
-        'selected_options' => json_encode([$selectedOption]),
-        'attempted_at' => now(),
-    ]);
+        if ($already) {
+            return response()->json(['message' => 'Already answered this quiz.'], 403);
+        }
 
-    // Update content stats
-    $stats = ContentStat::firstOrCreate(['content_id' => $content->id]);
-    $stats->increment('attempts');
-    if ($isCorrect) {
-        $stats->increment('correct_answers');
+        $correctOption = $content->options()->where('is_correct', true)->first();
+        $selected = $request->option_id;
+        $isCorrect = $correctOption && $selected == $correctOption->id;
+
+        // Track answer
+        UserActivity::create([
+            'user_id' => $user->id,
+            'content_id' => $content->id,
+            'activity_type' => 'quiz_answered',
+            'points' => $isCorrect ? 10 : 0
+        ]);
+
+        UserContentStat::create([
+            'user_id' => $user->id,
+            'content_id' => $content->id,
+            'answered_correctly' => $isCorrect,
+            'selected_options' => json_encode([$selected]),
+            'attempted_at' => now(),
+        ]);
+
+        // Update stats
+        $stats = ContentStat::firstOrCreate(['content_id' => $content->id]);
+        $stats->increment('attempts');
+        if ($isCorrect) {
+            $stats->increment('correct_answers');
+        }
+
+        $counts = json_decode($stats->option_counts, true) ?? [];
+        $counts[$selected] = ($counts[$selected] ?? 0) + 1;
+        $stats->option_counts = json_encode($counts);
+        $stats->save();
+
+        return response()->json([
+            'correct' => $isCorrect,
+            'correct_option_id' => $correctOption->id,
+        ]);
     }
-    $optionCounts = $stats->option_counts ? json_decode($stats->option_counts, true) : [];
-    $optionCounts[$selectedOption] = ($optionCounts[$selectedOption] ?? 0) + 1;
-    $stats->option_counts = json_encode($optionCounts);
-    $stats->save();
 
-    return response()->json(['correct' => $isCorrect]);
+public function list()
+{
+    $quizzes = Content::with('options')
+        ->where('type', 'quiz')
+        ->where('is_active', true)
+        ->select('id', 'title', 'description')
+        ->latest()
+        ->take(5)
+        ->get();
+
+    return response()->json($quizzes);
 }
+
+public function checkAnswered($id)
+{
+    $userId = auth()->id();
+    $activity = UserActivity::where('user_id', $userId)
+        ->where('content_id', $id)
+        ->where('activity_type', 'quiz_answered')
+        ->first();
+
+    $hasAnswered = $activity !== null;
+    
+    if (!$hasAnswered) {
+        return response()->json(['answered' => false]);
+    }
+    
+    // Get the correct option and selected answer details
+    $quiz = Content::with('options')->findOrFail($id);
+    $correctOption = $quiz->options->where('is_correct', true)->first();
+    
+    $stat = UserContentStat::where('user_id', $userId)
+        ->where('content_id', $id)
+        ->latest()
+        ->first();
+        
+    $selectedOption = $stat && $stat->selected_options ? json_decode($stat->selected_options)[0] : null;
+    
+    return response()->json([
+        'answered' => true,
+        'correct' => $stat->answered_correctly ?? false,
+        'correct_option_id' => $correctOption?->id,
+        'selected_option_id' => $selectedOption
+    ]);
+}
+
+public function answeredDetail($id)
+{
+    $userId = auth()->id();
+
+    $quiz = Content::with('options')->findOrFail($id);
+
+    $activity = UserActivity::where('user_id', $userId)
+        ->where('content_id', $id)
+        ->where('activity_type', 'quiz_answered')
+        ->first();
+
+    if (!$activity) {
+        return response()->json(['answered' => false]);
+    }
+
+    $stat = UserContentStat::where('user_id', $userId)
+        ->where('content_id', $id)
+        ->latest()
+        ->first();
+
+    $correctOption = $quiz->options->where('is_correct', true)->first();
+    $selectedOption = optional($stat)->selected_options ? json_decode($stat->selected_options)[0] : null;
+
+    return response()->json([
+        'answered' => true,
+        'correct' => $stat->answered_correctly ?? false,
+        'correct_option_id' => $correctOption?->id,
+        'selected_option_id' => $selectedOption
+    ]);
+}
+
+
 
 }
 

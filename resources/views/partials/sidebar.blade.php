@@ -40,7 +40,15 @@
                     <a class="nav-link" href="#"><i class="fas fa-newspaper"></i> News</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fas fa-poll"></i> Polls & Quizzes</a>
+                   <a class="nav-link {{ request()->is('polls') ? 'active' : '' }}" href="{{ route('polls') }}">
+                    <i class="fas fa-poll"></i> Polls </a>
+                </li>
+                  <li class="nav-item">
+                      <a class="nav-link {{ request()->is('quizzes') ? 'active' : '' }}" href="{{ route('quizzes') }}">
+                    </i>  Quizzes</a>
+                </li>
+                  <li class="nav-item">
+                    <a class="nav-link" href="#"><i class="fas fa-poll"></i>  Trivia</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link" href="#"><i class="fas fa-users"></i> Fan Zone</a>

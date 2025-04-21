@@ -3,6 +3,7 @@
 @section('content')
 <div class="container-fluid">
     <div class="row">
+  
         {{-- Sidebar --}}
         @include('partials.sidebar')
 
@@ -16,6 +17,16 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
         @endif
+
+                        @if(session('auth_token'))
+                    <script>
+                        @if(session('auth_token'))
+                            localStorage.setItem('auth_token', @json(session('auth_token')));
+                        @endif
+                    </script>
+                @endif
+
+            {{-- Onboarding Modal --}}
 
             {{-- Dashboard Content (Cards/Sections) --}}
             <div class="row mt-4">
@@ -46,6 +57,21 @@
                     </div>
                 </div>
             </div>
+
+
+            {{-- 🏆 Leaderboard Widget Section --}}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-body">
+                <h5 class="card-title">🏆 Leaderboard</h5>
+                <div id="leaderboard-widget"
+                     data-user="{{ auth()->id() }}"
+                     data-token="{{ session('auth_token') }}">
+                </div>
+            </div>
+        </div>
+    </div>
 
             {{-- React-mountable component areas --}}
             <<div id="chat-app" 

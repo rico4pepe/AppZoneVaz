@@ -54,20 +54,34 @@ public function results($id)
         return response()->json(['message' => 'Not a poll.'], 400);
     }
 
-    $results = $content->options->map(function ($option) {
+    $totalVotes = PollVote::where('content_id', $content->id)->count();
+
+    $results = $content->options->map(function ($option) use ($totalVotes) {
         $votes = PollVote::where('content_option_id', $option->id)->count();
+        $percentage = $totalVotes > 0 ? round(($votes / $totalVotes) * 100) : 0;
         return [
-            'option' => $option->option_text,
-            'votes' => $votes
+            'option_id' => $option->id,
+        'option_text' => $option->option_text,
+        'votes' => $votes,
+        'percentage' => $totalVotes > 0 ? round(($votes / $totalVotes) * 100) : 0,
         ];
     });
 
     return response()->json([
         'poll' => $content->title,
-        'results' => $results
+        'results' => $results,
+        'total_votes' => $totalVotes,
     ]);
 }
 
+public function checkVote($pollId)
+{
+    $hasVoted = PollVote::where('user_id', auth()->id())
+                        ->where('content_id', $pollId)
+                        ->exists();
+
+    return response()->json(['hasVoted' => $hasVoted]);
+}
 
 public function leaderboard()
 {
@@ -95,6 +109,22 @@ public function myRank()
         'rank' => $rank,
         'points' => $users[$rank - 1]->total_points ?? 0,
     ]);
+}
+
+
+public function list()
+{
+    $polls = Content::with(['options' => function($query) {
+        $query->select('id', 'content_id', 'option_text');
+    }])
+    ->where('type', 'poll')
+    ->where('is_active', true) // ✅ Only active polls
+    ->select('id', 'title', 'description', 'type', 'created_at')
+    ->latest()
+    ->take(5)
+    ->get();
+
+    return response()->json($polls);
 }
 
 

@@ -110,6 +110,8 @@ body {
     @viteReactRefresh
     @vite('resources/js/app.js')
     @vite('resources/js/chat.jsx')
+    @vite('resources/js/poll.jsx')
+    @vite('resources/js/quizz.jsx')
     
     
 

@@ -72,8 +72,8 @@ class ContentManager extends Component
             'type' => 'required|in:poll,quiz,trivia',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'options' => 'required|array|min:2',
-            'options.*.text' => 'required|string|max:255',
+            'options' => $this->type !== 'trivia' ? 'required|array|min:2' : 'nullable',
+            'options.*.text' => $this->type !== 'trivia' ? 'required|string|max:255' : 'nullable',
             'publishAt' => 'nullable|date',
         ]);
 
