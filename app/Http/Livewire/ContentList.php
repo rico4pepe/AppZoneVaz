@@ -12,6 +12,7 @@ class ContentList extends Component
 
     public $filterType = '';
     protected $paginationTheme = 'bootstrap';
+    public $contentToDelete = null;
 
     public function updatingFilterType()
     {
@@ -22,7 +23,7 @@ class ContentList extends Component
     {
         session()->flash('message', 'Edit clicked for ID: ' . $id);
         // Logic for redirecting to edit page or emitting event to another component
-        return redirect()->route('admin.content.edit', ['id' => $id]);
+        return redirect()->route('admin.dashboard', ['id' => $id]);
     }
 
     public function viewStats($id)
@@ -32,13 +33,26 @@ class ContentList extends Component
     }
 
     public function confirmDelete($id)
-    {
-        $content = Content::find($id);
+{
+    $this->contentToDelete = $id;
+    //$this->dispatchBrowserEvent('show-delete-modal');
+    $this->dispatchBrowserEvent('show-sweet-alert');
+}
+
+
+public function deleteConfirmed()
+{
+    if ($this->contentToDelete) {
+        $content = Content::find($this->contentToDelete);
         if ($content) {
             $content->delete();
-            session()->flash('message', 'Content deleted successfully.');
         }
+
+        $this->contentToDelete = null;
+        session()->flash('message', 'Content deleted successfully.');
+        $this->dispatchBrowserEvent('deleted');
     }
+}
 
     public function render()
     {

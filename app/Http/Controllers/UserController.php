@@ -62,6 +62,14 @@ class UserController extends Controller
     
         // Fetch user
         $user = User::where('phone_number', $request->phone_number)->first();
+
+          // Check if user's subscription has expired
+    if ($user->expires_at && now()->greaterThan($user->expires_at)) {
+        return response()->json([
+            'message' => 'Your subscription has expired. Please renew your data plan to continue.',
+            'expired' => true
+        ], 403);
+    }
     
         // Token verification (WiFi use)
         if ($request->has('token') && $user->token !== $request->token) {

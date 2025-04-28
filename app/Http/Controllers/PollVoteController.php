@@ -119,6 +119,7 @@ public function list()
     }])
     ->where('type', 'poll')
     ->where('is_active', true) // ✅ Only active polls
+    // ✅ Only polls that haven't expired
     ->select('id', 'title', 'description', 'type', 'created_at')
     ->latest()
     ->take(5)

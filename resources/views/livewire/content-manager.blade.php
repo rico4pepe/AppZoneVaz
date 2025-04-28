@@ -145,6 +145,13 @@
                  @error('publishAt') <span class="invalid-feedback">{{ $message }}</span> @enderror
               </div>
 
+               <div class="mb-3">
+                <label for="expireDate" class="form-label">Expire Date (Optional)</label>
+                {{-- Bind expire date input to $publishAt --}}
+                <input type="datetime-local" class="form-control @error('expireAt') is-invalid @enderror" id="expireAt" wire:model="expireAt">
+                 @error('expireAt') <span class="invalid-feedback">{{ $message }}</span> @enderror
+              </div>
+
               {{-- Status (Not in class properties - using isActive and isFeatured instead) --}}
               {{-- <div class="mb-3">
                 <label for="status" class="form-label">Status</label>
@@ -162,6 +169,8 @@
                       <label class="form-check-label" for="isActive">Active</label>
                   </div>
               </div>
+
+              
               <div class="mb-3">
                   <div class="form-check form-switch">
                       <input class="form-check-input" type="checkbox" id="isFeatured" wire:model="isFeatured">

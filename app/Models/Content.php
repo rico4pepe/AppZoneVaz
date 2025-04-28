@@ -11,7 +11,7 @@ class Content extends Model
 
     protected $fillable = [
         'title', 'description', 'type', 'difficulty',
-        'league_id', 'team_id', 'published_at', 'is_featured', 'is_active'
+        'league_id', 'team_id', 'published_at', 'is_featured', 'is_active', 'expire_at'
     ];
 
     protected $casts = [

@@ -12,7 +12,7 @@ class ContentManager extends Component
 
     public $type, $title, $description, $options = [], $correctOption = null;
     public $publishAt, $isFeatured = false, $isActive = true;
-    public $contentId = null;
+    public $contentId = null, $expireAt;
 
     public function mount($id = null)
 {
@@ -53,6 +53,7 @@ class ContentManager extends Component
     $this->publishAt = optional($content->published_at)->format('Y-m-d\TH:i');
     $this->isFeatured = $content->is_featured;
     $this->isActive = $content->is_active;
+    $this->expireAt = optional($content->expire_at)->format('Y-m-d\TH:i');
     $this->options = $content->options->map(function ($opt) {
         return ['text' => $opt->option_text];
     })->toArray();
@@ -75,6 +76,7 @@ class ContentManager extends Component
             'options' => $this->type !== 'trivia' ? 'required|array|min:2' : 'nullable',
             'options.*.text' => $this->type !== 'trivia' ? 'required|string|max:255' : 'nullable',
             'publishAt' => 'nullable|date',
+            'expireAt' => 'nullable|date',
         ]);
 
         if ($this->type === 'quiz') {
@@ -92,6 +94,7 @@ class ContentManager extends Component
                     'title' => $this->title,
                     'description' => $this->description,
                     'published_at' => $this->publishAt ? Carbon::parse($this->publishAt) : null,
+                    'expire_at' => $this->expireAt ? Carbon::parse($this->expireAt) : null,
                     'is_featured' => $this->isFeatured,
                     'is_active' => $this->isActive,
                 ]);
@@ -103,6 +106,7 @@ class ContentManager extends Component
                 'title' => $this->title,
                 'description' => $this->description,
                 'published_at' => $this->publishAt ? Carbon::parse($this->publishAt) : null,
+                'expire_at' => $this->expireAt ? Carbon::parse($this->expireAt) : null,
                 'is_featured' => $this->isFeatured,
                 'is_active' => $this->isActive,
             ]);

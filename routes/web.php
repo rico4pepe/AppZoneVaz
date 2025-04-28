@@ -19,7 +19,7 @@ use App\Http\Controllers\UserController;
 //     return view('welcome');
 // })->name('home');
 
-Route::get('/admin/content/create', function () {
+Route::get('/admin/content/create/{id?}', function () {
     return view('admin.dashboard');
 })->name('admin.dashboard');
 
