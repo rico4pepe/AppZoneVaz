@@ -12,7 +12,7 @@
 
                <div class="row mt-4">
                 <div class="col-12">
-                    <h4 class="mb-4">🗳️ All Polls</h4>
+                    <h4 class="mb-4">🗳️ All Quiz</h4>
 
                     {{-- React Poll App Mount Point --}}
                     <div id="quiz-app"

@@ -25,6 +25,21 @@ class ChatController extends Controller
         preg_match_all('/@(\w+)/', $validated['message'], $matches);
         $usernames = $matches[1] ?? [];
 
+        $ban = ChatBan::where('user_id', Auth::id())
+                    ->where(function ($q) {
+                        $q->whereNull('banned_until')
+                        ->orWhere('banned_until', '>', now());
+                    })
+                    ->latest()
+                    ->first();
+
+            if ($ban) {
+                return response()->json([
+                    'message' => 'You are banned from sending messages.',
+                    'reason' => $ban->reason,
+                ], 403);
+            }
+
         $message = ChatMessage::create([
             'user_id' => Auth::id(),
             'event_id' => $validated['event_id'] ?? null,
@@ -34,23 +49,23 @@ class ChatController extends Controller
 
 
         
-foreach ($usernames as $username) {
-    $mentionedUser = \App\Models\User::where('username', $username)->first();
-    if ($mentionedUser) {
-        Mention::create([
-            'chat_message_id' => $message->id,
-            'mentioned_user_id' => $mentionedUser->id,
-        ]);
+            foreach ($usernames as $username) {
+                    $mentionedUser = \App\Models\User::where('username', $username)->first();
+                    if ($mentionedUser) {
+                    Mention::create([
+                        'chat_message_id' => $message->id,
+                        'mentioned_user_id' => $mentionedUser->id,
+                    ]);
 
-        // Optional: send a notification, store alert, etc.
-    }
-}
+                    // Optional: send a notification, store alert, etc.
+                }
+            }
 
         return response()->json([
             'message' => 'Message sent',
             'data' => $message->load('user'),
         ]);
-    }
+ }
 
     // Fetch messages (optionally filter by event)
     public function fetchMessages(Request $request)

@@ -26,7 +26,11 @@ class ChatMessage extends Model
     }
 
     public function reports()
-{
-    return $this->hasMany(Report::class, 'message_id');
-}
+        {
+            return $this->hasMany(Report::class, 'message_id');
+        }
+
+        protected $attributes = [
+            'status' => 'open',
+        ];
 }

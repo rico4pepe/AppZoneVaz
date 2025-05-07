@@ -123,6 +123,10 @@ public function list()
     $quizzes = Content::with('options')
         ->where('type', 'quiz')
         ->where('is_active', true)
+        ->where(function($query) {
+            $query->whereNull('expire_at') // Include if expire_at is null
+                  ->orWhere('expire_at', '>', now()); // Or if expiration is in future
+        })
         ->select('id', 'title', 'description')
         ->latest()
         ->take(5)

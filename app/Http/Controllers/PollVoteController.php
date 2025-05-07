@@ -119,7 +119,10 @@ public function list()
     }])
     ->where('type', 'poll')
     ->where('is_active', true) // ✅ Only active polls
-    // ✅ Only polls that haven't expired
+    ->where(function($query) {
+        $query->whereNull('expire_at') // Include if expire_at is null
+              ->orWhere('expire_at', '>', now()); // Or if expiration is in future
+    })
     ->select('id', 'title', 'description', 'type', 'created_at')
     ->latest()
     ->take(5)
