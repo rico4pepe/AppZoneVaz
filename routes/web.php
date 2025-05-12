@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Livewire\ContentManager;
 use App\Http\Controllers\UserController;
+use App\Http\Livewire\DashboardOverview;
 
 /*
 |--------------------------------------------------------------------------
@@ -18,6 +19,15 @@ use App\Http\Controllers\UserController;
 // Route::get('/', function () {
 //     return view('welcome');
 // })->name('home');
+
+
+
+
+    Route::get('/admin/dashboard-overview', function () {
+    return view('admin.dashboardoverview');
+})->name('admin.dashboard-overview');
+
+
 
 Route::get('/admin/content/create/{id?}', function () {
     return view('admin.dashboard');
@@ -50,6 +60,9 @@ Route::post('/login', [UserController::class, 'login'])->name('login.custom');
 Route::get('/dashboard', function () {
     return view('dashboard');
 })->middleware('auth')->name('dashboard');
+
+
+
 
 
 Route::middleware(['auth'])->group(function () {

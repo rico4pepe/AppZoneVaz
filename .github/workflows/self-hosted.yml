@@ -1,0 +1,30 @@
+name: Deploy Laravel + Vite (Self-Hosted)
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: [self-hosted, laravel-vite]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install Composer dependencies
+      run: composer install --no-interaction --prefer-dist --optimize-autoloader
+
+    - name: Set file permissions
+      run: chmod -R 775 storage bootstrap/cache
+
+    - name: Install Node.js dependencies and build assets
+      run: |
+        npm ci
+        npm run build
+
+    - name: Move Vite manifest.json
+      run: cp public/build/.vite/manifest.json public/build/
+
+    - name: Run Laravel migrations
+      run: php artisan migrate --force

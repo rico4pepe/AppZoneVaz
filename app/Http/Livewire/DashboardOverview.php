@@ -96,7 +96,7 @@ class DashboardOverview extends Component
 
     public function render()
     {
-        return view('livewire.admin.dashboard-overview');
+        return view('livewire.dashboard-overview');
     }
 }
 
