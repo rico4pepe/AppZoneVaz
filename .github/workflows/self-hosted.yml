@@ -19,6 +19,9 @@ jobs:
       - name: Copy .env to new location (runs before delete)
         run: cp /var/www/html/AppZoneVaz/.env /home/emsthias33/actions-runner/fanzone/fanzone/fanzone/.env
 
+      - name: grant permissions
+        run: cd /var/www/html/AppZoneVaz/ && sudo chmod -R 777 ./
+
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
@@ -45,3 +48,6 @@ jobs:
 
       - name: Copy all files (except .env) to /var/www/html/AppZoneVaz
         run: sudo cp -r /home/emsthias33/actions-runner/fanzone/fanzone/fanzone/* /var/www/html/AppZoneVaz/
+
+      - name: grant permissions
+        run: cd /var/www/html/AppZoneVaz/ && sudo chmod -R 777 ./

@@ -28,6 +28,16 @@
     </div>
 </div>
 
+{{  --- Pie Chart --}}
+<div class="card mt-4">
+    <div class="card-body">
+        <h5 class="card-title">Content Type Breakdown</h5>
+        <canvas id="contentChart" width="400" height="200"></canvas>
+    </div>
+</div>
+
+        {{-- User Registration Stats --}}
+
         {{-- Statistics Cards --}}
 
         <div class="row g-3">

@@ -28,6 +28,9 @@ class DashboardOverview extends Component
     public $quizAvgChartLabels = [];
     public $quizAvgChartData = [];
 
+    public $contentChartLabels = [];
+    public $contentChartData = [];
+
     public function mount()
     {
         $this->startDate = now()->subMonth()->format('Y-m-d');
@@ -56,13 +59,22 @@ class DashboardOverview extends Component
 
        // $this->userCount = User::whereBetween('created_at', [$start, $end])->count();
        $this->userCount = $this->getUserCount($start, $end); 
-       $this->loadQuizAverages($start, $end);
+       
 
         $this->contentStats = [
             'total' => Content::whereBetween('created_at', [$start, $end])->count(),
             'polls' => Content::where('type', 'poll')->whereBetween('created_at', [$start, $end])->count(),
             'quizzes' => Content::where('type', 'quiz')->whereBetween('created_at', [$start, $end])->count(),
             'trivias' => Content::where('type', 'trivia')->whereBetween('created_at', [$start, $end])->count(),
+        ];
+
+
+        // load charts
+        $this->contentChartLabels = ['Polls', 'Quizzes', 'Trivias'];
+        $this->contentChartData = [
+            $this->contentStats['polls'],
+            $this->contentStats['quizzes'],
+            $this->contentStats['trivias']
         ];
 
         $this->quizStats = [
