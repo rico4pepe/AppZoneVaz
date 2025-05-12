@@ -12,10 +12,13 @@ jobs:
       run:
         working-directory: /var/www/html/AppZoneVaz
 
-      
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
+
+      - name: Sync code to server (exclude .env)
+        run: |
+          rsync -av --delete --exclude='.env' ./ /var/www/html/AppZoneVaz/
 
       - name: Set app key
         run: php artisan key:generate

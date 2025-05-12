@@ -33,9 +33,8 @@ class DashboardOverview extends Component
             'most_attempted' => Content::with(['user'])
                 ->where('type', 'quiz')
                 ->whereBetween('created_at', [$start, $end])
-                ->withCount(['activities' => fn($q) use ($start, $end) {
+                ->withCount(['activities' => function ($q) use ($start, $end) {
                     $q->whereBetween('created_at', [$start, $end]);
-                    //error
                 }])
                 ->orderByDesc('activities_count')
                 ->first(),
@@ -49,7 +48,7 @@ class DashboardOverview extends Component
             'top_poll' => Content::with(['user'])
                 ->where('type', 'poll')
                 ->whereBetween('created_at', [$start, $end])
-                ->withCount(['pollVotes' => fn($q) use ($start, $end) {
+                ->withCount(['pollVotes' => function ($q) use ($start, $end) {
                     $q->whereBetween('created_at', [$start, $end]);
                 }])
                 ->orderByDesc('poll_votes_count')
