@@ -29,10 +29,16 @@ jobs:
         run: sudo chmod -R 777 storage bootstrap/cache
 
       - name: Install Node.js dependencies
-        run: npm install
+        run: npm install && sudo chmod -R 777 node_modules
+
+      - name: grant permissions
+        run: cd /var/www/html/AppZoneVaz/ && sudo chmod -R 777 ./
 
       - name: Build Vite assets
         run: npm run build
+
+      - name: grant permissions
+        run: cd /var/www/html/AppZoneVaz/ && sudo chmod -R 777 ./
 
       - name: Move Vite manifest.json
         run: cp public/build/.vite/manifest.json public/build/
