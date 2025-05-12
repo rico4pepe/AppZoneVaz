@@ -13,6 +13,8 @@ jobs:
         working-directory: /var/www/html/AppZoneVaz
 
     steps:
+      - name: permissions first
+        run: sudo chmod -R 777  /home/emsthias33/actions-runner/fanzone/*
       - name: Checkout code
         uses: actions/checkout@v2
 

@@ -87,3 +87,40 @@
     </div>
 
 </div>
+@push('scripts')
+<script>
+    function renderUserChart(labels, data) {
+        const ctx = document.getElementById('userChart');
+        if (!ctx) return;
+
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Users',
+                    data: data,
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    }
+
+    document.addEventListener('livewire:load', function () {
+        renderUserChart(@json($userChartLabels), @json($userChartData));
+    });
+
+    Livewire.hook('message.processed', (message, component) => {
+        renderUserChart(@json($userChartLabels), @json($userChartData));
+    });
+</script>
+@endpush
+
