@@ -16,12 +16,8 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v2
 
-      - name: Sync code to server (exclude .env)
-        run: |
-          rsync -av --delete --exclude='.env' ./ /var/www/html/AppZoneVaz/
-
-      - name: Set app key
-        run: php artisan key:generate
+      - name: Copy .env to new location (runs before delete)
+        run: cp /var/www/html/AppZoneVaz/.env /home/emsthias33/actions-runner/fanzone/fanzone/fanzone/.env
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
@@ -40,3 +36,12 @@ jobs:
 
       - name: Run Laravel migrations
         run: php artisan migrate --force
+
+      - name: Copy .env to new location (runs before delete)
+        run: cp /var/www/html/AppZoneVaz/.env /home/emsthias33/actions-runner/fanzone/fanzone/fanzone/.env
+
+      - name: Delete all files inside /var/www/html/AppZoneVaz/
+        run: sudo rm -rf /var/www/html/AppZoneVaz/*
+
+      - name: Copy all files (except .env) to /var/www/html/AppZoneVaz
+        run: sudo cp -r /home/emsthias33/actions-runner/fanzone/fanzone/fanzone/ /var/www/html/AppZoneVaz/
