@@ -25,8 +25,9 @@ class DashboardOverview extends Component
 
     public $userChartLabels = [];
     public $userChartData = [];
-    public $quizAvgChartLabels = [];
-    public $quizAvgChartData = [];
+ public $quizAvgChartLabels = [];
+public $quizAvgChartData = [];
+
 
     public $contentChartLabels = [];
     public $contentChartData = [];
@@ -89,6 +90,9 @@ class DashboardOverview extends Component
                 ->first(),
         ];
 
+            $this->loadQuizAverages($start, $end);
+
+
         $this->pollStats = [
             'total_votes' => PollVote::whereBetween('created_at', [$start, $end])->count(),
             'top_poll' => Content::where('type', 'poll')
@@ -131,19 +135,19 @@ class DashboardOverview extends Component
                 return array_sum($dailyCounts);
             }
 
-            private function loadQuizAverages($start, $end): void
-            {
-                $averages = UserActivity::where('activity_type', 'quiz_completed')
-                    ->whereBetween('created_at', [$start, $end])
-                    ->selectRaw('DATE(created_at) as day, AVG(points) as avg_score')
-                    ->groupBy('day')
-                    ->orderBy('day')
-                    ->pluck('avg_score', 'day')
-                    ->toArray();
+                                        private function loadQuizAverages($start, $end): void
+                        {
+                            $averages = UserActivity::where('activity_type', 'quiz_completed')
+                                ->whereBetween('created_at', [$start, $end])
+                                ->selectRaw('DATE(created_at) as day, AVG(points) as avg_score')
+                                ->groupBy('day')
+                                ->orderBy('day')
+                                ->pluck('avg_score', 'day')
+                                ->toArray();
 
-                $this->quizAvgChartLabels = array_keys($averages);
-                $this->quizAvgChartData = array_map(fn($v) => round($v, 1), array_values($averages));
-            }
+                            $this->quizAvgChartLabels = array_keys($averages);
+                            $this->quizAvgChartData = array_map(fn($v) => round($v, 1), array_values($averages));
+                        }
 
     public function render()
     {

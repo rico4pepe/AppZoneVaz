@@ -23,7 +23,7 @@
          <div class="row g-3">
 
                             {{-- Bar Chart --}}
-                    <div class="col-md-3"">
+                    <div class="col-md-3">
                 <div class="card-body">
                     <h5 class="card-title">User Registrations (Last 30 Days)</h5>
                     <canvas id="userChart" width="400" height="200"></canvas>
@@ -33,11 +33,25 @@
             {{-- Pie Chart --}}
             <div class="col-md-3">
                 <div class="card-body">
-                    <h5 class="card-title">Content Type Breakdown SS</h5>
+                    <h5 class="card-title">Content Type Breakdown </h5>
                     <canvas id="contentChart" width="400" height="200"></canvas>
                 </div>
             </div>
+
+
+
+
+         {{-- Pie Chart --}}
+        <div class="col-md-3">
+    <div class="card-body">
+        <h5 class="card-title">Average Quiz Scores by Day</h5>
+        <canvas id="quizAvgChart" width="400" height="200"></canvas>
+    </div>
+</div>
+
         </div>
+
+   
 
         <div class="row g-3">
             <div class="col-md-3">
@@ -150,14 +164,45 @@
 }
 
 
+function renderQuizAvgChart(labels, data) {
+    const ctx = document.getElementById('quizAvgChart');
+    if (!ctx) return;
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Avg Points',
+                data: data,
+                backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                borderColor: 'rgba(40, 167, 69, 1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+
+
     document.addEventListener('livewire:load', function () {
         renderUserChart(@json($userChartLabels), @json($userChartData));
         renderContentChart(@json($contentChartLabels), @json($contentChartData));
+        renderQuizAvgChart(@json($quizAvgChartLabels), @json($quizAvgChartData));
     });
 
     Livewire.hook('message.processed', (message, component) => {
         renderUserChart(@json($userChartLabels), @json($userChartData));
         renderContentChart(@json($contentChartLabels), @json($contentChartData));
+        renderQuizAvgChart(@json($quizAvgChartLabels), @json($quizAvgChartData));
     });
 </script>
 @endpush
