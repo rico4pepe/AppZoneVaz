@@ -20,7 +20,7 @@
             {{--- Date Filter Buttons --}}
         </div>
 
-                {{-- Pie Chart --}}
+                {{-- Bar Chart --}}
         <div class="card mt-4">
     <div class="card-body">
         <h5 class="card-title">User Registrations (Last 30 Days)</h5>
