@@ -162,7 +162,7 @@
   
   @yield('content')
   <!-- Main Content -->
-  
+  {{-- Main Content Area --}}
 
   <!-- Bootstrap JS Bundle with Popper -->
 
