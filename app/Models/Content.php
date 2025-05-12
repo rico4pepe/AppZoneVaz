@@ -25,6 +25,16 @@ class Content extends Model
         return $this->hasMany(ContentOption::class);
     }
 
+    public function activities()
+{
+    return $this->hasMany(UserActivity::class);
+}
+
+public function pollVotes()
+{
+    return $this->hasMany(PollVote::class);
+}
+
     public function league()
     {
         return $this->belongsTo(League::class);

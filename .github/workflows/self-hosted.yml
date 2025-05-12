@@ -8,23 +8,31 @@ jobs:
   deploy:
     runs-on: self-hosted
 
+    defaults:
+      run:
+        working-directory: /var/www/html/AppZoneVaz
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Install Composer dependencies
-      run: composer install --no-interaction --prefer-dist --optimize-autoloader
+      - name: Set app key
+        run: php artisan key:generate
 
-    - name: Set file permissions
-      run: chmod -R 775 storage bootstrap/cache
+      - name: Install Composer dependencies
+        run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
-    - name: Install Node.js dependencies and build assets
-      run: |
-        npm ci
-        npm run build
+      - name: Set file permissions
+        run: chmod -R 775 storage bootstrap/cache
 
-    - name: Move Vite manifest.json
-      run: cp public/build/.vite/manifest.json public/build/
+      - name: Install Node.js dependencies
+        run: npm install
 
-    - name: Run Laravel migrations
-      run: php artisan migrate --force
+      - name: Build Vite assets
+        run: npm run build
+
+      - name: Move Vite manifest.json
+        run: cp public/build/.vite/manifest.json public/build/
+
+      - name: Run Laravel migrations
+        run: php artisan migrate --force

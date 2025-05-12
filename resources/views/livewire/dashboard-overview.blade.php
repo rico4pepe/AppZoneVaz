@@ -5,6 +5,18 @@
     <div class="container mt-4">
         <h4 class="mb-3">Admin Dashboard Overview</h4>
 
+                    <div class="mb-4">
+                <form wire:submit.prevent>
+                    <label for="dateRange">Filter By Date:</label>
+                    <div class="d-flex gap-2 align-items-center">
+                        <input type="date" wire:model="startDate" class="form-control" />
+                        <span>to</span>
+                        <input type="date" wire:model="endDate" class="form-control" />
+                    </div>
+                </form>
+            </div>
+
+
         <div class="row g-3">
             <div class="col-md-3">
                 <div class="card text-white bg-primary">
@@ -18,9 +30,9 @@
                 <div class="card text-white bg-dark">
                     <div class="card-body">
                         <h5>Total Content</h5>
-                        <p>Polls: {{ $contentStats['polls'] }}</p>
-                        <p>Quizzes: {{ $contentStats['quizzes'] }}</p>
-                        <p>Trivias: {{ $contentStats['trivias'] }}</p>
+                        <p>Polls: {{ $contentStats['polls'] ?? 0 }}</p>
+                        <p>Quizzes: {{ $contentStats['quizzes'] ?? 0 }}</p>
+                        <p>Trivias: {{ $contentStats['trivias'] ?? 0 }}</p>
                     </div>
                 </div>
             </div>
