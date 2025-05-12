@@ -3,6 +3,8 @@
     <div class="container mt-4">
         <h4 class="mb-3">Admin Dashboard Overview</h4>
 
+        
+
         {{-- Date Filter --}}
         <div class="card mb-4">
             <div class="card-body d-flex flex-wrap gap-3 align-items-end">
@@ -17,6 +19,16 @@
             </div>
             {{--- Date Filter Buttons --}}
         </div>
+
+        {{-- Pie Chart --}}
+        <div class="card mt-4">
+    <div class="card-body">
+        <h5 class="card-title">User Registrations (Last 30 Days)</h5>
+        <canvas id="userChart" width="400" height="200"></canvas>
+    </div>
+</div>
+
+        {{-- Statistics Cards --}}
 
         <div class="row g-3">
             {{-- Total Users --}}
@@ -95,6 +107,35 @@
             </div>
         </div>
     </div>
-    {{--- End of Container ---}}
+    {{--- End of Container  hdghg  hjhh djhd djd ---}}
 
 </div>
+@push('scripts')
+<script>
+document.addEventListener('livewire:load', function () {
+    const ctx = document.getElementById('userChart');
+    if (!ctx) return;
+
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: @json($userChartLabels),
+            datasets: [{
+                label: 'Users',
+                data: @json($userChartData),
+                backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+});
+</script>
+@endpush
+
