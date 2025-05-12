@@ -14,7 +14,7 @@ jobs:
 
     steps:
       - name: Grant full permissions to fanzone
-        run: sudo chmod -R 777 /home/emsthias33/actions-runner/fanzone/
+        run:  chmod -R 777 /home/emsthias33/actions-runner/fanzone/
 
       - name: Checkout code
         uses: actions/checkout@v2
@@ -23,22 +23,22 @@ jobs:
         run: cp /var/www/html/AppZoneVaz/.env /tmp/.env_backup
 
       - name: Delete everything in AppZoneVaz except .env
-        run: sudo find /var/www/html/AppZoneVaz/* ! -name '.env' -exec rm -rf {} +
+        run:  find /var/www/html/AppZoneVaz/* ! -name '.env' -exec rm -rf {} +
 
       - name: Move new files from fanzone to AppZoneVaz
-        run: sudo cp -r /home/emsthias33/actions-runner/fanzone/fanzone/fanzone/* /var/www/html/AppZoneVaz/
+        run:  cp -r /home/emsthias33/actions-runner/fanzone/fanzone/fanzone/* /var/www/html/AppZoneVaz/
 
       - name: Restore .env file
         run: cp /tmp/.env_backup /var/www/html/AppZoneVaz/.env
 
       - name: Set permissions
-        run: sudo chmod -R 777 /var/www/html/AppZoneVaz/
+        run:  chmod -R 777 /var/www/html/AppZoneVaz/
 
       - name: Install Composer dependencies
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
       - name: Set Laravel writable folders
-        run: sudo chmod -R 777 storage bootstrap/cache
+        run:  chmod -R 777 storage bootstrap/cache
 
       - name: Install Node.js dependencies
         run: npm install
@@ -47,4 +47,4 @@ jobs:
         run: npm run build
 
       - name: Final permissions fix
-        run: sudo chmod -R 777 /var/www/html/AppZoneVaz/
+        run:  chmod -R 777 /var/www/html/AppZoneVaz/

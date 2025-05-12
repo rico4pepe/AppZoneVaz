@@ -20,13 +20,15 @@
             {{--- Date Filter Buttons --}}
         </div>
 
-                {{-- Bar Chart --}}
-        <div class="card mt-4">
-    <div class="card-body">
-        <h5 class="card-title">User Registrations (Last 30 Days)</h5>
-        <canvas id="userChart" width="400" height="200"></canvas>
-    </div>
-</div>
+         <div class="row g-3">
+
+                            {{-- Bar Chart --}}
+                    <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">User Registrations (Last 30 Days)</h5>
+                    <canvas id="userChart" width="400" height="200"></canvas>
+                </div>
+            </div>
 
             {{-- Pie Chart --}}
             <div class="card mt-4">
@@ -35,6 +37,7 @@
                     <canvas id="contentChart" width="400" height="200"></canvas>
                 </div>
             </div>
+        </div>
 
         <div class="row g-3">
             <div class="col-md-3">
