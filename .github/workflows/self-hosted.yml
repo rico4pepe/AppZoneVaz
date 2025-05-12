@@ -44,4 +44,4 @@ jobs:
         run: sudo rm -rf /var/www/html/AppZoneVaz/*
 
       - name: Copy all files (except .env) to /var/www/html/AppZoneVaz
-        run: sudo cp -r /home/emsthias33/actions-runner/fanzone/fanzone/fanzone/ /var/www/html/AppZoneVaz/
+        run: sudo cp -r /home/emsthias33/actions-runner/fanzone/fanzone/fanzone/* /var/www/html/AppZoneVaz/
