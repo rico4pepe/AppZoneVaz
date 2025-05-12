@@ -5,6 +5,21 @@
     <div class="container mt-4">
         <h4 class="mb-3">Admin Dashboard Overview</h4>
 
+               {{-- Date Filter --}}
+        <div class="card mb-4">
+            <div class="card-body d-flex flex-wrap gap-3 align-items-end">
+                <div>
+                    <label class="form-label">Start Date</label>
+                    <input type="date" class="form-control" wire:model="startDate">
+                </div>
+                <div>
+                    <label class="form-label">End Date</label>
+                    <input type="date" class="form-control" wire:model="endDate">
+                </div>
+            </div>
+            {{--- Date Filter Buttons --}}
+        </div>
+
         <div class="row g-3">
             <div class="col-md-3">
                 <div class="card text-white bg-primary">

@@ -49,6 +49,9 @@ jobs:
       - name: Copy .env to new location (runs before delete)
         run: cp /var/www/html/AppZoneVaz/.env /home/emsthias33/actions-runner/fanzone/fanzone/fanzone/.env
 
+      - name: Copy Vite build folder to /var/www/html/AppZoneVaz
+        run: sudo cp -r  /var/www/html/AppZoneVaz/public/build/* /home/emsthias33/actions-runner/fanzone/fanzone/fanzone/public/build
+
       - name: Delete all files inside /var/www/html/AppZoneVaz/
         run: sudo rm -rf /var/www/html/AppZoneVaz/*
 
