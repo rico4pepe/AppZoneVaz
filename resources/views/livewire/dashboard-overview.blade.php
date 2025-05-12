@@ -15,6 +15,7 @@
                     <input type="date" class="form-control" wire:model="endDate">
                 </div>
             </div>
+            {{--- Date Filter Buttons --}}
         </div>
 
         <div class="row g-3">
