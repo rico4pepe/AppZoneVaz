@@ -13,6 +13,7 @@ class ChatMessage extends Model
         'event_id',
         'message',
         'is_hidden',
+        'status'
     ];
 
     public function user()

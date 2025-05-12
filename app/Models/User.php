@@ -42,4 +42,9 @@ class User extends Authenticatable
 {
     return $this->hasMany(UserActivity::class);
 }
+
+public function moderatedMessages()
+{
+    return $this->hasMany(ModeratedMessage::class);
+}
 }

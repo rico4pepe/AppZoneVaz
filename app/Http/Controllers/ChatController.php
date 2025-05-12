@@ -5,11 +5,13 @@ namespace App\Http\Controllers;
 use App\Models\ChatMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use App\Models\Report;
 use App\Models\User;
 use App\Models\ChatBan;
 use App\Models\UserWarning;
 use App\Models\Mention;
+use App\Models\ModeratedMessage;
 
 
 class ChatController extends Controller
@@ -21,53 +23,70 @@ class ChatController extends Controller
             'message' => 'required|string|max:1000',
             'event_id' => 'nullable|exists:events,id',
         ]);
-
-        preg_match_all('/@(\w+)/', $validated['message'], $matches);
-        $usernames = $matches[1] ?? [];
-
+    
         $ban = ChatBan::where('user_id', Auth::id())
                     ->where(function ($q) {
-                        $q->whereNull('banned_until')
-                        ->orWhere('banned_until', '>', now());
-                    })
-                    ->latest()
-                    ->first();
+                        $q->whereNull('banned_until')->orWhere('banned_until', '>', now());
+                    })->first();
+    
+        if ($ban) {
+            return response()->json([
+                'message' => 'You are banned from sending messages.',
+                'reason' => $ban->reason,
+            ], 403);
+        }
+    
+        // 🔍 Moderate message using OpenAI
+        // $client = app(\OpenAI\Client::class);
+        // $result = $client->moderations()->create([
+        //     'input' => $validated['message']
+        // ]);
+    
+        // $flagged = $result->results[0]->flagged;
+    
+        // if ($flagged) {
+        //     // Log the flagged message
+        //     ModeratedMessage::create([
+        //         'user_id' => Auth::id(),
+        //         'message' => $validated['message'],
+        //         'categories' => json_encode($result->results[0]->categories),
+        //         'severity' => $result->results[0]->category_scores->toArray()['sexual'] ?? null, // optional
+        //     ]);
+    
+        //     return response()->json([
+        //         'message' => 'Your message was flagged by moderation and not sent.'
+        //     ], 422);
+        // }
 
-            if ($ban) {
-                return response()->json([
-                    'message' => 'You are banned from sending messages.',
-                    'reason' => $ban->reason,
-                ], 403);
-            }
-
+        Log::info('Chat message from user: ' . Auth::id());
+    
+        // ✅ Continue sending
         $message = ChatMessage::create([
             'user_id' => Auth::id(),
             'event_id' => $validated['event_id'] ?? null,
             'message' => $validated['message'],
             'is_hidden' => false,
         ]);
-
-
-        
-            foreach ($usernames as $username) {
-                    $mentionedUser = \App\Models\User::where('username', $username)->first();
-                    if ($mentionedUser) {
-                    Mention::create([
-                        'chat_message_id' => $message->id,
-                        'mentioned_user_id' => $mentionedUser->id,
-                    ]);
-
-                    // Optional: send a notification, store alert, etc.
-                }
+    
+        // Mentions
+        preg_match_all('/@(\w+)/', $validated['message'], $matches);
+        foreach ($matches[1] ?? [] as $username) {
+            $mentionedUser = \App\Models\User::where('username', $username)->first();
+            if ($mentionedUser) {
+                Mention::create([
+                    'chat_message_id' => $message->id,
+                    'mentioned_user_id' => $mentionedUser->id,
+                ]);
             }
-
+        }
+    
         return response()->json([
             'message' => 'Message sent',
             'data' => $message->load('user'),
         ]);
- }
+    }
 
-    // Fetch messages (optionally filter by event)
+    // Fetch messages (optionally filter by event)y
     public function fetchMessages(Request $request)
     {
         $eventId = $request->query('event_id');

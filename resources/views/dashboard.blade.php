@@ -74,7 +74,7 @@
     </div>
 
             {{-- React-mountable component areas --}}
-            <<div id="chat-app" 
+        <div id="chat-app" 
             data-user="{{ auth()->id() }}" 
             data-username="{{ str_replace(' ', '', auth()->user()?->name ?? 'Guest') }}">
         </div>
