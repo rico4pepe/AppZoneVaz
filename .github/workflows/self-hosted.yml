@@ -23,7 +23,7 @@ jobs:
         run: composer install --no-interaction --prefer-dist --optimize-autoloader
 
       - name: Set file permissions
-        run: chmod -R 775 storage bootstrap/cache
+        run: sudo chmod -R 777 storage bootstrap/cache
 
       - name: Install Node.js dependencies
         run: npm install
