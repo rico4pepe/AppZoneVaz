@@ -28,6 +28,14 @@
     </div>
 </div>
 
+            {{-- Pie Chart --}}
+            <div class="card mt-4">
+                <div class="card-body">
+                    <h5 class="card-title">Content Type Breakdown</h5>
+                    <canvas id="contentChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
         <div class="row g-3">
             <div class="col-md-3">
                 <div class="card text-white bg-primary">
@@ -114,12 +122,39 @@
         });
     }
 
+    function renderContentChart(labels, data) {
+    const ctx = document.getElementById('contentChart');
+    if (!ctx) return;
+
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: labels,
+            datasets: [{
+                data: data,
+                backgroundColor: ['#007bff', '#28a745', '#ffc107']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+}
+
+
     document.addEventListener('livewire:load', function () {
         renderUserChart(@json($userChartLabels), @json($userChartData));
+        renderContentChart(@json($contentChartLabels), @json($contentChartData));
     });
 
     Livewire.hook('message.processed', (message, component) => {
         renderUserChart(@json($userChartLabels), @json($userChartData));
+        renderContentChart(@json($contentChartLabels), @json($contentChartData));
     });
 </script>
 @endpush
