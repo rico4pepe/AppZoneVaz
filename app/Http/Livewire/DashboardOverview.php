@@ -10,9 +10,12 @@ use App\Models\ChatMessage;
 use App\Models\Report;
 use App\Models\PollVote;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Validator;
 
 class DashboardOverview extends Component
 {
+    // Potential Curly Brace Issue Areas
     public $userCount;
     public $contentStats = [];
     public $quizStats = [];
@@ -20,84 +23,42 @@ class DashboardOverview extends Component
     public $chatStats = [];
     public $reportStats = [];
 
-    public $startDate;
-    public $endDate;
-
-    public function mount()
+    // Closure and Array Potential Issues
+    private function getQuizStats($start, $end): array
     {
-        $this->startDate = now()->subMonth()->format('Y-m-d');
-        $this->endDate = now()->format('Y-m-d');
-
-        $this->loadStats();
-    }
-
-    public function updatedStartDate()
-    {
-        $this->loadStats();
-    }
-
-    public function updatedEndDate()
-    {
-        $this->loadStats();
-    }
-
-    public function loadStats()
-    {
-        $start = Carbon::parse($this->startDate)->startOfDay();
-        $end = Carbon::parse($this->endDate)->endOfDay();
-
-        $this->userCount = User::whereBetween('created_at', [$start, $end])->count();
-
-        $this->contentStats = [
-            'total' => Content::whereBetween('created_at', [$start, $end])->count(),
-            'polls' => Content::where('type', 'poll')->whereBetween('created_at', [$start, $end])->count(),
-            'quizzes' => Content::where('type', 'quiz')->whereBetween('created_at', [$start, $end])->count(),
-            'trivias' => Content::where('type', 'trivia')->whereBetween('created_at', [$start, $end])->count(),
-        ];
-
-        $this->quizStats = [
+        return [
             'avg_points' => round(UserActivity::where('activity_type', 'quiz_completed')
-                ->whereBetween('created_at', [$start, $end])->avg('points'), 1),
-            'most_attempted' => Content::where('type', 'quiz')
                 ->whereBetween('created_at', [$start, $end])
-                ->withCount(['activities' => function ($q) use ($start, $end) {
+                ->avg('points') ?? 0, 1),
+            'most_attempted' => Content::with(['user'])
+                ->where('type', 'quiz')
+                ->whereBetween('created_at', [$start, $end])
+                ->withCount(['activities' => fn($q) use ($start, $end) {
                     $q->whereBetween('created_at', [$start, $end]);
+                    //error
                 }])
                 ->orderByDesc('activities_count')
                 ->first(),
         ];
+    }
 
-        $this->pollStats = [
+    private function getPollStats($start, $end): array
+    {
+        return [
             'total_votes' => PollVote::whereBetween('created_at', [$start, $end])->count(),
-            'top_poll' => Content::where('type', 'poll')
+            'top_poll' => Content::with(['user'])
+                ->where('type', 'poll')
                 ->whereBetween('created_at', [$start, $end])
-                ->withCount(['pollVotes' => function ($q) use ($start, $end) {
+                ->withCount(['pollVotes' => fn($q) use ($start, $end) {
                     $q->whereBetween('created_at', [$start, $end]);
                 }])
                 ->orderByDesc('poll_votes_count')
                 ->first(),
-        ];
-
-        $this->chatStats = [
-            'messages' => ChatMessage::whereBetween('created_at', [$start, $end])->count(),
-            'top_user' => ChatMessage::selectRaw('user_id, count(*) as total')
+            'recent_votes' => PollVote::with(['user', 'content'])
                 ->whereBetween('created_at', [$start, $end])
-                ->groupBy('user_id')
-                ->orderByDesc('total')
-                ->with('user')
-                ->first(),
+                ->latest()
+                ->take($this->perPage)
+                ->get()
         ];
-
-        $this->reportStats = [
-            'pending' => Report::where('status', 'pending')->whereBetween('created_at', [$start, $end])->count(),
-            'banned_users' => \App\Models\ChatBan::whereBetween('created_at', [$start, $end])->count(),
-        ];
-    }
-
-    public function render()
-    {
-        return view('livewire.dashboard-overview');
     }
 }
-
-
