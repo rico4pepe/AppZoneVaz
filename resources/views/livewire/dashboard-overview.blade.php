@@ -31,7 +31,7 @@
             {{-- Pie Chart --}}
             <div class="card mt-4">
                 <div class="card-body">
-                    <h5 class="card-title">Content Type Breakdown</h5>
+                    <h5 class="card-title">Content Type Breakdown SS</h5>
                     <canvas id="contentChart" width="400" height="200"></canvas>
                 </div>
             </div>
