@@ -23,7 +23,7 @@ jobs:
         run: cp /var/www/html/AppZoneVaz/.env /tmp/.env_backup
 
       - name: Delete everything in AppZoneVaz except .env
-        run:  find /var/www/html/AppZoneVaz/* ! -name '.env' -exec rm -rf {} +
+        run:  rm -rf /var/www/html/AppZoneVaz/* 
 
       - name: Move new files from fanzone to AppZoneVaz
         run:  cp -r /home/emsthias33/actions-runner/fanzone/fanzone/fanzone/* /var/www/html/AppZoneVaz/
