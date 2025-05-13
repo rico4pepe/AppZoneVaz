@@ -41,11 +41,18 @@
 
 
 
-         {{-- Pie Chart --}}
+         {{-- Quiz Chart --}}
         <div class="col-md-3">
     <div class="card-body">
         <h5 class="card-title">Average Quiz Scores by Day</h5>
         <canvas id="quizAvgChart" width="400" height="200"></canvas>
+    </div>
+</div>
+
+      <div class="col-md-3">
+    <div class="card-body">
+        <h5 class="card-title">Poll Votes Per Day</h5>
+        <canvas id="pollTrendChart" width="400" height="200"></canvas>
     </div>
 </div>
 
@@ -192,17 +199,48 @@ function renderQuizAvgChart(labels, data) {
 }
 
 
+function renderPollTrendChart(labels, data) {
+    const ctx = document.getElementById('pollTrendChart');
+    if (!ctx) return;
+
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Poll Votes',
+                data: data,
+                backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                borderColor: 'rgba(255, 193, 7, 1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+}
+
+
+
 
     document.addEventListener('livewire:load', function () {
         renderUserChart(@json($userChartLabels), @json($userChartData));
         renderContentChart(@json($contentChartLabels), @json($contentChartData));
         renderQuizAvgChart(@json($quizAvgChartLabels), @json($quizAvgChartData));
+        renderPollTrendChart(@json($pollChartLabels), @json($pollChartData));
     });
 
     Livewire.hook('message.processed', (message, component) => {
         renderUserChart(@json($userChartLabels), @json($userChartData));
         renderContentChart(@json($contentChartLabels), @json($contentChartData));
         renderQuizAvgChart(@json($quizAvgChartLabels), @json($quizAvgChartData));
+        renderPollTrendChart(@json($pollChartLabels), @json($pollChartData));
     });
 </script>
 @endpush

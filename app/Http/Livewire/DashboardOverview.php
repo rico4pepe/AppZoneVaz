@@ -25,12 +25,16 @@ class DashboardOverview extends Component
 
     public $userChartLabels = [];
     public $userChartData = [];
- public $quizAvgChartLabels = [];
-public $quizAvgChartData = [];
+
+    public $quizAvgChartLabels = [];
+    public $quizAvgChartData = [];
 
 
     public $contentChartLabels = [];
     public $contentChartData = [];
+
+            public $pollChartLabels = [];
+        public $pollChartData = [];
 
     public function mount()
     {
@@ -104,6 +108,8 @@ public $quizAvgChartData = [];
                 ->first(),
         ];
 
+        $this->loadPollTrends($start, $end);
+
         $this->chatStats = [
             'messages' => ChatMessage::whereBetween('created_at', [$start, $end])->count(),
             'top_user' => ChatMessage::selectRaw('user_id, count(*) as total')
@@ -148,6 +154,20 @@ public $quizAvgChartData = [];
                             $this->quizAvgChartLabels = array_keys($averages);
                             $this->quizAvgChartData = array_map(fn($v) => round($v, 1), array_values($averages));
                         }
+
+                    private function loadPollTrends($start, $end): void
+                    {
+                        $votes = \App\Models\PollVote::whereBetween('created_at', [$start, $end])
+                            ->selectRaw('DATE(created_at) as day, COUNT(*) as vote_count')
+                            ->groupBy('day')
+                            ->orderBy('day')
+                            ->pluck('vote_count', 'day')
+                            ->toArray();
+
+                        $this->pollChartLabels = array_keys($votes);
+                        $this->pollChartData = array_values($votes);
+                    }
+
 
     public function render()
     {
