@@ -84,7 +84,7 @@
         {{-- Charts --}}
         <div class="row g-3 mb-4">
     <div class="col-md-3">
-        <div class="card h-100">
+            <div class="card h-100 cursor-pointer" data-bs-toggle="modal" data-bs-target="#drilldownModal" onclick="loadDrilldown('user-registrations')">
             <div class="card-body">
                 <h5 class="card-title">User Registrations (Last 30 Days)</h5>
                 <canvas id="userChart" width="400" height="200"></canvas>
@@ -121,6 +121,25 @@
         
     </div>
 </div>
+
+<!-- Drilldown Modal -->
+<div class="modal fade" id="drilldownModal" tabindex="-1" aria-labelledby="drilldownModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="drilldownModalLabel">Loading...</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="drilldownModalContent">
+        <p class="text-muted">Fetching details...</p>
+      </div>
+      <div class="modal-footer">
+        <a href="#" class="btn btn-outline-primary" id="fullReportLink" target="_blank">View Full Report</a>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 @push('scripts')
 <script>
@@ -218,4 +237,33 @@
         renderPollTrendChart(@json($pollChartLabels), @json($pollChartData));
     });
 </script>
+
+<script>
+    function loadDrilldown(type) {
+        const modalTitle = {
+            'user-registrations': 'User Registrations Details',
+            // add more types as needed
+        };
+
+        const reportLinks = {
+            'user-registrations': '/admin/reports/users',
+            // add more as needed
+        };
+
+        document.getElementById('drilldownModalLabel').textContent = modalTitle[type] || 'Details';
+        document.getElementById('drilldownModalContent').innerHTML = '<p class="text-muted">Loading data...</p>';
+        document.getElementById('fullReportLink').href = reportLinks[type] || '#';
+
+        // Use Livewire or AJAX to load detailed content dynamically
+        fetch(`/admin/dashboard/drilldown/${type}`)
+            .then(res => res.text())
+            .then(html => {
+                document.getElementById('drilldownModalContent').innerHTML = html;
+            })
+            .catch(() => {
+                document.getElementById('drilldownModalContent').innerHTML = '<p class="text-danger">Failed to load details.</p>';
+            });
+    }
+</script>
+
 @endpush

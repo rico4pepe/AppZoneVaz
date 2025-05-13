@@ -1,9 +1,11 @@
 <?php
 
+use App\Http\Controllers\DrillDownController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Livewire\ContentManager;
 use App\Http\Controllers\UserController;
 use App\Http\Livewire\DashboardOverview;
+
 
 /*
 |--------------------------------------------------------------------------
@@ -48,6 +50,9 @@ Route::get('/admin/leaderboard', function () {
 Route::get('/admin/chatmoderation', function () {
     return view('admin.chatmoderation');
 })->name('admin.chatmoderation');
+
+Route::get('/admin/dashboard/drilldown/{type}', [DrillDownController::class, 'loadDrilldown']);
+
 
 
 // Show login form (GET)

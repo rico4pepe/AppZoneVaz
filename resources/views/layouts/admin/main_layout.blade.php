@@ -68,6 +68,10 @@
       border: none;
       box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
     }
+
+    .cursor-pointer {
+      cursor: pointer;
+    }
     
     /* Responsive adjustments */
     @media (max-width: 768px) {
