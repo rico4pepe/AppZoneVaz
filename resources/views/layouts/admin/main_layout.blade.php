@@ -116,7 +116,7 @@
     
     <ul class="nav flex-column mt-3">
       <li class="nav-item">
-            <a href="{{admin.dashboard-overview}}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
+            <a href="{{route('admin.dashboard-overview')}}" class="nav-link {{ request()->routeIs('admin.dashboard') ? 'active' : '' }}">
         
           <i class="fas fa-tachometer-alt"></i> Dashboard
         </a>
