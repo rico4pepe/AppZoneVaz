@@ -321,7 +321,7 @@ public function fullReport(Request $request)
             'pollVotes'
         ])
           ->when($request->plan, fn($q) => $q->where('plan', $request->plan))
-        ->when($request->team, fn($q) => $q->where('favorite_team_id', $request->team))
+        ->when($request->team, fn($q) => $q->where('team', $request->team))
         ->when($request->status, function ($q) use ($request) {
             $now = now();
             return $request->status === 'active'
