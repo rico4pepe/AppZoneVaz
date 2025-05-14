@@ -43,8 +43,18 @@ class User extends Authenticatable
     return $this->hasMany(UserActivity::class);
 }
 
+public function pollvotes()
+{
+    return $this->hasMany(PollVote::class);
+}
+
 public function moderatedMessages()
 {
     return $this->hasMany(ModeratedMessage::class);
+}
+
+public function team()
+{
+    return $this->belongsTo(Team::class);
 }
 }

@@ -312,6 +312,35 @@ public function saveUserTeam(Request $request)
 }
 
 
+public function fullReport(Request $request)
+{
+    $users = User::with(['team', 'subscriptionRenewalLogs'])
+        ->withCount([
+            'activities as quiz_count' => fn ($q) => $q->where('activity_type', 'quiz_completed'),
+            'activities as trivia_count' => fn ($q) => $q->where('activity_type', 'trivia_completed'),
+            'pollVotes'
+        ])
+          ->when($request->plan, fn($q) => $q->where('plan', $request->plan))
+        ->when($request->team, fn($q) => $q->where('favorite_team_id', $request->team))
+        ->when($request->status, function ($q) use ($request) {
+            $now = now();
+            return $request->status === 'active'
+                ? $q->where('expires_at', '>', $now)
+                : $q->where('expires_at', '<=', $now);
+        })
+    ->when($request->search, function ($q) use ($request) {
+        $term = $request->search;
+        $q->where(function ($query) use ($term) {
+            $query->where('name', 'like', "%$term%")
+                  ->orWhere('phone_number', 'like', "%$term%");
+        });
+    })
+    ->latest()
+    ->paginate(25);
+    
+    return view('admin.reports.users', compact('users'));
+}
+
 
 
 }

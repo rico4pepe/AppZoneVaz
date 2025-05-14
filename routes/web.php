@@ -61,6 +61,7 @@ Route::get('/home', function () {
 })->name('login')->middleware('guest');
 
 Route::post('/login', [UserController::class, 'login'])->name('login.custom');
+Route::get('/admin/reports/users', [UserController::class, 'fullReport'])->name('admin.reports.users');
 
 Route::get('/dashboard', function () {
     return view('dashboard');
