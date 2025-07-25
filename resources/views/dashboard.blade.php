@@ -90,7 +90,7 @@
     </div>
 </div>
 
-@if (auth()->check() && empty(auth()->user()->team_id))
+@if (auth()->check() && (is_null(auth()->user()->name) || (auth()->user()->team_id === 0)))
     <script>
    
         document.addEventListener('DOMContentLoaded', function () {
