@@ -63,43 +63,44 @@ class UserController extends Controller
         // Fetch user
         $user = User::where('phone_number', $request->phone_number)->first();
 
-          // Check if user's subscription has expired
-    if ($user->expires_at && now()->greaterThan($user->expires_at)) {
-        return response()->json([
-            'message' => 'Your subscription has expired. Please renew your data plan to continue.',
-            'expired' => true
-        ], 403);
+                // Check if user's subscription has expired
+            if ($user->expires_at && now()->greaterThan($user->expires_at)) {
+                return response()->json([
+                    'message' => 'Your subscription has expired. Please renew your data plan to continue.',
+                    'expired' => true
+                ], 403);
+            }
+    
+                // Token verification (WiFi use)
+                if ($request->has('token') && $user->token !== $request->token) {
+                    return response()->json(['message' => 'Invalid token'], 401);
+                }
+            
+                // Prevent login if already logged in on another device
+                if ($user->tokens()->count() > 0) {
+                    return response()->json([
+                        'message' => 'Already logged in on another device. Please log out first.'
+                    ], 403);
+                }
+    
+                // Generate personal access token (for API use)
+                $token = $user->createToken('auth_token')->plainTextToken;
+            
+                // Check if it's an API request
+                if ($request->wantsJson() || $request->ajax()) {
+                    return response()->json([
+                        'user' => $user,
+                        'token' => $token,
+                        'redirect' => route('dashboard')
+                    ]);
+                }
+                // 🔥 FIX: Laravel Sanctum doesn’t auto-login to session, so if you want session-based login:
+                auth()->login($user); // create Laravel session
+            
+                // Now redirect to dashboard (HTML)
+                return redirect()->route('dashboard')->with('auth_token', $token);
     }
-    
-        // Token verification (WiFi use)
-        if ($request->has('token') && $user->token !== $request->token) {
-            return response()->json(['message' => 'Invalid token'], 401);
-        }
-    
-        // Prevent login if already logged in on another device
-        if ($user->tokens()->count() > 0) {
-            return response()->json([
-                'message' => 'Already logged in on another device. Please log out first.'
-            ], 403);
-        }
-    
-        // Generate personal access token (for API use)
-        $token = $user->createToken('auth_token')->plainTextToken;
-    
-         // Check if it's an API request
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json([
-                'user' => $user,
-                'token' => $token,
-                'redirect' => route('dashboard')
-            ]);
-        }
-        // 🔥 FIX: Laravel Sanctum doesn’t auto-login to session, so if you want session-based login:
-        auth()->login($user); // create Laravel session
-    
-        // Now redirect to dashboard (HTML)
-        return redirect()->route('dashboard')->with('auth_token', $token);
-    }
+
 
     public function updateUserPreference(Request $request)
     {
