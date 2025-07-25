@@ -92,7 +92,7 @@
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card h-100">
+         <div class="card h-100 cursor-pointer" data-bs-toggle="modal" data-bs-target="#drilldownModal" onclick="loadDrilldown('content-type-breakdown')">
             <div class="card-body">
                 <h5 class="card-title">Content Type Breakdown</h5>
                 <canvas id="contentChart" width="400" height="200"></canvas>
@@ -242,11 +242,15 @@
     function loadDrilldown(type) {
         const modalTitle = {
             'user-registrations': 'User Registrations Details',
+            'content-type-breakdown': 'Content Type Breakdown',
+            'quiz-stats': 'Quiz Statistics',
+            'poll-trends': 'Poll Trends',
             // add more types as needed
         };
 
         const reportLinks = {
             'user-registrations': '/admin/reports/users',
+            'content-type-breakdown': '/admin/reports/content-types',
             // add more as needed
         };
 

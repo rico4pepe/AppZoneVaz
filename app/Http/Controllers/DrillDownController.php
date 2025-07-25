@@ -17,6 +17,10 @@ class DrillDownController extends Controller
                             case 'user-registrations':
                             $users = User::where('created_at', '>=', now()->subDays(30))->latest()->get()->take(10);
                             return view('admin.partials.users', compact('users'));
+                            break;
+                            case 'content-type-breakdown':  
+                              
+
                               // Add more types later
                             default:
                         return response('<p>No data available</p>', 404);
