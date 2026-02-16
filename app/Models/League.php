@@ -16,10 +16,17 @@ class League extends Model
     ];
 
 
-    public function teams()
-    {
-        return $this->hasMany(Team::class);
-    }
+ 
+
+            public function teams()
+        {
+            return $this->hasMany(Team::class);
+        }
+
+        public function users()
+        {
+            return $this->belongsToMany(User::class, 'user_leagues');
+        }
 
     public function contents()
 {   

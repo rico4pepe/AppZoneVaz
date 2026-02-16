@@ -12,6 +12,7 @@ use App\Models\ChatBan;
 use App\Models\UserWarning;
 use App\Models\Mention;
 use App\Models\ModeratedMessage;
+use App\Models\Fixture;
 
 
 class ChatController extends Controller
@@ -21,7 +22,8 @@ class ChatController extends Controller
     {
         $validated = $request->validate([
             'message' => 'required|string|max:1000',
-            'event_id' => 'nullable|exists:events,id',
+            'event_id' => 'nullable|exists:fixtures,id',
+
         ]);
     
         $ban = ChatBan::where('user_id', Auth::id())
@@ -170,6 +172,43 @@ class ChatController extends Controller
 
         return response()->json($warnings);
     }
+
+    public function rooms()
+        {
+            $user = Auth::user();
+
+            $leagueIds = $user->leagues()->pluck('leagues.id');
+            $teamIds   = $user->teams()->pluck('teams.id');
+
+            $query = Fixture::with(['homeTeam', 'awayTeam']);
+
+            if ($teamIds->isNotEmpty()) {
+                $query->where(function ($q) use ($teamIds) {
+                    $q->whereIn('home_team_id', $teamIds)
+                    ->orWhereIn('away_team_id', $teamIds);
+                });
+            } elseif ($leagueIds->isNotEmpty()) {
+                $query->whereIn('league_id', $leagueIds);
+            }
+
+            $fixtures = $query->orderByDesc('kickoff_at')
+                            ->limit(10)
+                            ->get();
+
+            $rooms = [
+                ['id' => null, 'name' => '🌍 Global Chat']
+            ];
+
+            foreach ($fixtures as $fixture) {
+                $rooms[] = [
+                    'id' => $fixture->id,
+                    'name' => "{$fixture->homeTeam->name} vs {$fixture->awayTeam->name}"
+                ];
+            }
+
+            return response()->json($rooms);
+        }
+
 
 
 

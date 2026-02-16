@@ -1,0 +1,39 @@
+{
+  "_client-3DVn_WlK.js": {
+    "file": "assets/client-3DVn_WlK.js",
+    "name": "client"
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-DL_q1Xoz.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true
+  },
+  "resources/js/chat.jsx": {
+    "file": "assets/chat-DT9fsZwG.js",
+    "name": "chat",
+    "src": "resources/js/chat.jsx",
+    "isEntry": true,
+    "imports": [
+      "_client-3DVn_WlK.js"
+    ]
+  },
+  "resources/js/poll.jsx": {
+    "file": "assets/poll-DwhUJF3k.js",
+    "name": "poll",
+    "src": "resources/js/poll.jsx",
+    "isEntry": true,
+    "imports": [
+      "_client-3DVn_WlK.js"
+    ]
+  },
+  "resources/js/quizz.jsx": {
+    "file": "assets/quizz-BrkvSFrl.js",
+    "name": "quizz",
+    "src": "resources/js/quizz.jsx",
+    "isEntry": true,
+    "imports": [
+      "_client-3DVn_WlK.js"
+    ]
+  }
+}

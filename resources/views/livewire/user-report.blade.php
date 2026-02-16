@@ -41,7 +41,7 @@
                 <th>Phone</th>
                 <th>Plan</th>
                 <th>Subscription</th>
-                <th>Team</th>
+            
                 <th>Quiz</th>
                 <th>Trivia</th>
                 <th>Polls</th>
@@ -63,7 +63,7 @@
                             <small>Expired: {{ optional($user->expires_at)->format('d M Y') }}</small>
                         @endif
                     </td>
-                    <td>{{ optional($user->team)->name ?? '—' }}</td>
+                  
                     <td>{{ $user->quiz_count }}</td>
                     <td>{{ $user->trivia_count }}</td>
                     <td>{{ $user->poll_votes_count }}</td>

@@ -23,9 +23,15 @@ class Team extends Model
         return $this->belongsTo(League::class);
     }
 
+    public function users()
+        {
+            return $this->belongsToMany(User::class, 'user_teams');
+        }
     public function contents()
-{
-    return $this->hasMany(Content::class);
-}
+        {
+            return $this->hasMany(Content::class);
+        }
+    
+   
 
 }

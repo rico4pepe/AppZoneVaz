@@ -53,53 +53,78 @@ class UserController extends Controller
     }
 
 
-    public function login(Request $request)
+   public function login(Request $request)
     {
         $request->validate([
             'phone_number' => 'required|string|exists:users,phone_number',
-            'token' => 'nullable|string'
+            'token'        => 'nullable|string',
+            'device_id'    => 'required|string',
+            'force'        => 'nullable|boolean',
         ]);
-    
-        // Fetch user
+
         $user = User::where('phone_number', $request->phone_number)->first();
 
-          // Check if user's subscription has expired
-    if ($user->expires_at && now()->greaterThan($user->expires_at)) {
-        return response()->json([
-            'message' => 'Your subscription has expired. Please renew your data plan to continue.',
-            'expired' => true
-        ], 403);
-    }
-    
-        // Token verification (WiFi use)
-        if ($request->has('token') && $user->token !== $request->token) {
-            return response()->json(['message' => 'Invalid token'], 401);
-        }
-    
-        // Prevent login if already logged in on another device
-        if ($user->tokens()->count() > 0) {
+        // Subscription check
+        if ($user->expires_at && now()->greaterThan($user->expires_at)) {
             return response()->json([
-                'message' => 'Already logged in on another device. Please log out first.'
+                'message' => 'Your subscription has expired.',
+                'expired' => true
             ], 403);
         }
-    
-        // Generate personal access token (for API use)
-        $token = $user->createToken('auth_token')->plainTextToken;
-    
-         // Check if it's an API request
-        if ($request->wantsJson() || $request->ajax()) {
-            return response()->json([
-                'user' => $user,
-                'token' => $token,
-                'redirect' => route('dashboard')
-            ]);
+
+        // Optional Wi-Fi / SMS token check
+        if ($request->filled('token') && $user->token !== $request->token) {
+            return response()->json(['message' => 'Invalid token'], 401);
         }
-        // 🔥 FIX: Laravel Sanctum doesn’t auto-login to session, so if you want session-based login:
-        auth()->login($user); // create Laravel session
-    
-        // Now redirect to dashboard (HTML)
-        return redirect()->route('dashboard')->with('auth_token', $token);
+
+        // Check for active token on another device
+        $activeToken = $user->tokens()
+            ->where('device_id', '!=', $request->device_id)
+            ->first();
+
+        if ($activeToken && !$request->boolean('force')) {
+            return response()->json([
+                'message' => 'You are logged in on another device.',
+                'requires_confirmation' => true
+            ], 409);
+        }
+
+        // Force logout other devices
+        if ($request->boolean('force')) {
+            $user->tokens()->delete();
+        }
+        // Always ensure one token per device
+        $user->tokens()
+    ->where('device_id', $request->device_id)
+    ->delete();
+
+        // Create token for this device
+        $token = $user->createToken(
+            'auth_token',
+            ['*'],
+            [
+                'device_id'  => $request->device_id,
+                'user_agent' => $request->userAgent(),
+            ]
+        )->plainTextToken;
+
+        // Session login for HTML
+        auth()->login($user);
+
+        // Update observability fields
+        $user->update([
+            'last_login_at' => now(),
+            'last_login_ip' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'user'   => $user,
+            'token'  => $token,
+            'redirect' => route('dashboard')
+        ]);
     }
+
+
 
     public function updateUserPreference(Request $request)
     {

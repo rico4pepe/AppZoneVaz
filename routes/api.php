@@ -8,6 +8,8 @@ use App\Http\Controllers\SportMonksController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\PollVoteController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\Api\MatchController;
+use App\Http\Controllers\Api\LeagueController;
 
 /*
 |--------------------------------------------------------------------------
@@ -28,6 +30,12 @@ use App\Http\Controllers\QuizController;
     Route::post('/login', [UserController::class, 'login'])->name('login');
 
 
+Route::get('/matches/upcoming', [MatchController::class, 'upcoming']);
+Route::get('/matches/finished', [MatchController::class, 'finished']);
+Route::get('/leagues/{league}/matches', [MatchController::class, 'league']);
+Route::get('/teams/{team}/matches', [MatchController::class, 'team']);
+Route::get('/matches/{match}', [MatchController::class, 'show']);
+Route::get('/leagues/{league}/dashboard', [LeagueController::class, 'dashboard']);
 
 
 

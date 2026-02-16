@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -201,14 +202,11 @@ body {
                         </div>
                         <div class="card-body p-4">
 
-                                                    @if (session('error'))
-                                            <div class="alert alert-danger">
-                                                {{ session('error') }}
-                                            </div>
-                                        @endif
-                            <form method="POST" action="{{ route('login.custom') }}">
+                                       
+                           <form id="loginForm">
                              @csrf
                                 <div class="mb-3">
+                                    <input type="hidden" name="device_id" id="device_id">
                                     <label for="phone" class="form-label">Phone Number</label>
                                     <div class="input-group">
                                         <span class="input-group-text"><i class="fas fa-phone"></i></span>
@@ -245,7 +243,8 @@ body {
                                 <div class="bg-primary text-white rounded-circle p-2 me-3 text-center" style="width: 40px; height: 40px;">2</div>
                                 <div>
                                     <h5 class="mb-1">Login to Portal</h5>
-                                    <p class="text-muted">Use your phone number and token to access the platform if you not browsing with your data - wifi, hotspot</p>
+                                    <p class="text-muted">You only need your phone number to access the platform if you're using your own <strong> mobile data </strong>. 
+                                    If you're using another connection, such as <strong>Wi-Fi or a hotspot </strong>, you'll need both your phone number and a token</p>
                                 </div>
                             </div>
                         </div>
@@ -263,6 +262,158 @@ body {
 
 
       <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+      <script>
+(function () {
+    let deviceId = localStorage.getItem('device_id');
+
+    if (!deviceId) {
+        if (window.crypto && crypto.randomUUID) {
+            deviceId = crypto.randomUUID();
+        } else {
+            deviceId = generateUUIDv4(); // ✅ fallback
+        }
+
+        localStorage.setItem('device_id', deviceId);
+    }
+
+    document.getElementById('device_id').value = deviceId;
+})();
+
+function generateUUIDv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+const loginForm = document.getElementById('loginForm');
+const submitBtn = loginForm.querySelector('button[type="submit"]');
+
+loginForm.addEventListener('submit', async function (e) {
+    e.preventDefault();
+
+    setLoading(true);
+
+    const formData = new FormData(loginForm);
+
+    try {
+        const response = await fetch("{{ route('login.custom') }}", {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                'Accept': 'application/json'
+            },
+            body: formData
+        });
+
+        const data = await response.json();
+
+        // ✅ SUCCESS
+        if (response.ok && data.redirect) {
+
+            // 🔐 Store token for future API / chat usage
+            if (data.token) {
+                sessionStorage.setItem('auth_token', data.token);
+            }
+
+            window.location.href = data.redirect;
+            return;
+        }
+
+        // ⚠️ DEVICE CONFLICT
+        if (response.status === 409 && data.requires_confirmation) {
+            setLoading(false);
+
+            Swal.fire({
+                title: 'Active Session Detected',
+                text: 'You are logged in on another device. Continue here and log out there?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, continue',
+                cancelButtonText: 'Cancel'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    submitForcedLogin();
+                }
+            });
+            return;
+        }
+
+        // ❌ HARD ERROR
+        throw new Error(data.message || 'Login failed');
+
+    } catch (err) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Login Error',
+            text: err.message
+        });
+    } finally {
+        setLoading(false);
+    }
+});
+
+async function submitForcedLogin() {
+    setLoading(true);
+
+    // ✅ CLONE form data — never mutate original
+    const forcedFormData = new FormData(loginForm);
+    forcedFormData.append('force', '1');
+
+    try {
+        const response = await fetch("{{ route('login.custom') }}", {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': "{{ csrf_token() }}",
+                'Accept': 'application/json'
+            },
+            body: forcedFormData
+        });
+
+        const data = await response.json();
+
+        if (response.ok && data.redirect) {
+
+            if (data.token) {
+                sessionStorage.setItem('auth_token', data.token);
+            }
+
+            window.location.href = data.redirect;
+            return;
+        }
+
+        throw new Error(data.message || 'Login failed');
+
+    } catch (err) {
+        Swal.fire({
+            icon: 'error',
+            title: 'Login Error',
+            text: err.message
+        });
+    } finally {
+        setLoading(false);
+    }
+}
+
+// 🔄 Loading state handler
+function setLoading(isLoading) {
+    submitBtn.disabled = isLoading;
+    submitBtn.innerText = isLoading ? 'Logging in…' : 'Login';
+}
+
+
+
+</script>
+
+
+
+
+
+
 </body>
 </html>
    

@@ -5,6 +5,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Livewire\ContentManager;
 use App\Http\Controllers\UserController;
 use App\Http\Livewire\DashboardOverview;
+use Illuminate\Support\Facades\Log;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PreferencesController;
 
 
 /*
@@ -25,7 +28,8 @@ use App\Http\Livewire\DashboardOverview;
 
 
 
-    Route::get('/admin/dashboard-overview', function () {
+
+Route::get('/admin/dashboard-overview', function () {
     return view('admin.dashboardoverview');
 })->name('admin.dashboard-overview');
 
@@ -63,15 +67,32 @@ Route::get('/home', function () {
 Route::post('/login', [UserController::class, 'login'])->name('login.custom');
 Route::get('/admin/reports/users', [UserController::class, 'fullReport'])->name('admin.reports.users');
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware('auth')->name('dashboard');
+
+// Route::get('/dashboard', function () {
+
+//     Log::info('Dashboard route hit');
+//     return view('dashboard');
+
+// })->middleware('auth')->name('dashboard');
 
 
+// Route::middleware(['auth', 'has.preferences'])->group(function () {
+//     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+// });
 
 
 
 Route::middleware(['auth'])->group(function () {
+
+ Route::get('/dashboard', DashboardController::class)
+        ->middleware('has.preferences')
+        ->name('dashboard');
+
+    Route::get('/preferences', [PreferencesController::class, 'index'])
+        ->name('preferences.index');
+
+    Route::post('/preferences', [PreferencesController::class, 'store'])
+        ->name('preferences.store');
 
 
     //using higher order funcction
