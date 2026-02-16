@@ -50,7 +50,7 @@
             {{-- Use wire:submit to call the save method --}}
             <form wire:submit.prevent="save">
               <div class="mb-3">
-                <label class="form-label">Content Type</label>
+                <label class="form-label">Content Typess</label>
                  {{-- Use wire:model.live to update the UI instantly when type changes --}}
                 <div class="form-check form-check-inline">
                   <input class="form-check-input" type="radio" name="contentType" id="pollType" value="poll" wire:model.live="type">
@@ -65,6 +65,7 @@
                   <label class="form-check-label" for="triviaType">Trivia</label>
                 </div>
                  @error('type') <span class="text-danger d-block">{{ $message }}</span> @enderror
+                 <p>Debug: Current type = {{ $type ?? 'null' }}</p> 
               </div>
 
               <div class="mb-3">

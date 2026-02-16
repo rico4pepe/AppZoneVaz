@@ -17,46 +17,101 @@
         </div>
 
         <div class="sidebar-nav">
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->is('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
-                        <i class="fas fa-home"></i> Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->is('leagues') ? 'active' : '' }}" href="">
-                        <i class="fas fa-trophy"></i> Leagues
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {{ request()->is('matches/live') ? 'active' : '' }}" href="#">
-                        <i class="fas fa-futbol"></i> Live Matches
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fas fa-bell"></i> Notifications</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fas fa-newspaper"></i> News</a>
-                </li>
-                <li class="nav-item">
-                   <a class="nav-link {{ request()->is('polls') ? 'active' : '' }}" href="{{ route('polls') }}">
-                    <i class="fas fa-poll"></i> Polls </a>
-                </li>
-                  <li class="nav-item">
-                      <a class="nav-link {{ request()->is('quizzes') ? 'active' : '' }}" href="{{ route('quizzes') }}">
-                    </i>  Quizzes</a>
-                </li>
-                  <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fas fa-poll"></i>  Trivia</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fas fa-users"></i> Fan Zone</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="#"><i class="fas fa-calendar"></i> Team Matches</a>
-                </li>
-            </ul>
+           <ul class="nav flex-column">
+
+    {{-- CORE --}}
+    <li class="nav-item text-uppercase text-secondary small px-3 mt-3">
+        Core
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
+           href="{{ route('dashboard') }}">
+            <i class="fas fa-home me-2"></i> Dashboard
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('my-matches') ? 'active' : '' }}"
+           href="#">
+            <i class="fas fa-calendar-alt me-2"></i> My Matches
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('leagues') ? 'active' : '' }}"
+           href="#">
+            <i class="fas fa-trophy me-2"></i> Leagues
+        </a>
+    </li>
+
+
+    {{-- COMMUNITY --}}
+    <li class="nav-item text-uppercase text-secondary small px-3 mt-4">
+        Community
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('fan-zone') ? 'active' : '' }}"
+           href="#">
+            <i class="fas fa-users me-2"></i> Fan Zone
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('notifications') ? 'active' : '' }}"
+           href="#">
+            <i class="fas fa-bell me-2"></i> Notifications
+        </a>
+    </li>
+
+
+    {{-- EXPLORE --}}
+    <li class="nav-item text-uppercase text-secondary small px-3 mt-4">
+        Explore
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link {{ request()->is('matches/live') ? 'active' : '' }}"
+           href="#">
+            <i class="fas fa-futbol me-2"></i> Live Matches
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link" href="#">
+            <i class="fas fa-newspaper me-2"></i> News
+        </a>
+    </li>
+
+
+    {{-- ENGAGEMENT (Future Features) --}}
+    <li class="nav-item text-uppercase text-secondary small px-3 mt-4">
+        Engagement
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('polls') ? 'active' : '' }}"
+           href="{{ route('polls') }}">
+            <i class="fas fa-poll me-2"></i> Polls
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link {{ request()->routeIs('quizzes') ? 'active' : '' }}"
+           href="{{ route('quizzes') }}">
+            <i class="fas fa-brain me-2"></i> Quizzes
+        </a>
+    </li>
+
+    <li class="nav-item">
+        <a class="nav-link" href="#">
+            <i class="fas fa-lightbulb me-2"></i> Trivia
+        </a>
+    </li>
+
+</ul>
+
         </div>
     </div>
 

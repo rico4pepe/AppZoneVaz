@@ -53,8 +53,21 @@ public function moderatedMessages()
     return $this->hasMany(ModeratedMessage::class);
 }
 
+
+
 public function team()
 {
     return $this->belongsTo(Team::class);
 }
+
+public function leagues()
+{
+    return $this->belongsToMany(League::class, 'user_leagues');
+}
+
+public function teams()
+{
+    return $this->belongsToMany(Team::class, 'user_teams');
+}
+
 }
