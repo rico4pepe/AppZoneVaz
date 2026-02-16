@@ -1,6 +1,6 @@
 {
-  "_client-3DVn_WlK.js": {
-    "file": "assets/client-3DVn_WlK.js",
+  "_client-auj285-g.js": {
+    "file": "assets/client-auj285-g.js",
     "name": "client"
   },
   "resources/js/app.js": {
@@ -10,30 +10,30 @@
     "isEntry": true
   },
   "resources/js/chat.jsx": {
-    "file": "assets/chat-DT9fsZwG.js",
+    "file": "assets/chat-DEqYd3FA.js",
     "name": "chat",
     "src": "resources/js/chat.jsx",
     "isEntry": true,
     "imports": [
-      "_client-3DVn_WlK.js"
+      "_client-auj285-g.js"
     ]
   },
   "resources/js/poll.jsx": {
-    "file": "assets/poll-DwhUJF3k.js",
+    "file": "assets/poll-CNxL3DWx.js",
     "name": "poll",
     "src": "resources/js/poll.jsx",
     "isEntry": true,
     "imports": [
-      "_client-3DVn_WlK.js"
+      "_client-auj285-g.js"
     ]
   },
   "resources/js/quizz.jsx": {
-    "file": "assets/quizz-BrkvSFrl.js",
+    "file": "assets/quizz-BExoKUfa.js",
     "name": "quizz",
     "src": "resources/js/quizz.jsx",
     "isEntry": true,
     "imports": [
-      "_client-3DVn_WlK.js"
+      "_client-auj285-g.js"
     ]
   }
 }
