@@ -90,7 +90,8 @@
     </div>
 </div>
 
-@if (auth()->check() && (is_null(auth()->user()->name) || (auth()->user()->team_id === 0)))
+@if (auth()->check() && empty(auth()->user()->team_id))
+    {{-- Onboarding Modal --}}
     <script>
    
         document.addEventListener('DOMContentLoaded', function () {
