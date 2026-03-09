@@ -13,3 +13,10 @@ npm-debug.log
 yarn-error.log
 /.idea
 /.vscode
+
+# Build artifacts - should NOT be in version control
+/public/build
+/public/hot
+/public/js/app.js
+/public/css/app.css
+/public/mix-manifest.json
