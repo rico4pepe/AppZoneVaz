@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use App\Models\Fixture;
+use App\Observers\MatchObserver;
 use OpenAI;
 
 class AppServiceProvider extends ServiceProvider
@@ -30,6 +32,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot()
     {
         //
+        Fixture::observe(MatchObserver::class);
     }
 
 

@@ -43,12 +43,13 @@ class ContentList extends Component
 public function deleteConfirmed()
 {
     if ($this->contentToDelete) {
-        $content = Content::find($this->contentToDelete);
+        $content = Content::findOrFail($this->contentToDelete);
         if ($content) {
             $content->delete();
         }
 
         $this->contentToDelete = null;
+         $this->resetPage();
         session()->flash('message', 'Content deleted successfully.');
         $this->dispatchBrowserEvent('deleted');
     }

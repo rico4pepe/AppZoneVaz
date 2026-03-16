@@ -44,4 +44,25 @@ public function pollVotes()
     {
         return $this->belongsTo(Team::class);
     }
+
+    public function scopeVisible($query)
+    {
+        return $query
+            ->where('is_active', true)
+            ->where(function ($q) {
+                $q->whereNull('published_at')
+                ->orWhere('published_at', '<=', now());
+            })
+            ->where(function ($q) {
+                $q->whereNull('expire_at')
+                ->orWhere('expire_at', '>', now());
+            });
+    }
+
+    public function isInteractable()
+    {
+        return $this->is_active &&
+            (!$this->published_at || $this->published_at <= now()) &&
+            (!$this->expire_at || $this->expire_at > now());
+    }
 }

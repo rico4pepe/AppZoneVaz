@@ -51,6 +51,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/user/team', [UserController::class, 'saveUserTeam']);
     Route::get('/chat', [ChatController::class, 'fetchMessages']);
     Route::post('/chat', [ChatController::class, 'sendMessage']);
+    Route::get('/chat/rooms', [ChatController::class, 'rooms']);
+    Route::post('/chat/{messageId}/hide', [ChatController::class, 'hideMessage']);
+    Route::post('/chat/ban/{userId}', [ChatController::class, 'banUser']);
+    Route::post('/chat/warning', [ChatController::class, 'issueWarning']);
+    Route::get('/chat/warnings/{userId}', [ChatController::class, 'getUserWarnings']);
     Route::get('/polls', [PollVoteController::class, 'list']);
     Route::post('/poll/vote', [PollVoteController::class, 'vote']);
     Route::get('/poll/{id}/results', [PollVoteController::class, 'results']);

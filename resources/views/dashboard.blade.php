@@ -21,11 +21,11 @@
             @endif
 
             {{-- Store token for React --}}
-            @if(session('auth_token'))
+            <!-- @if(session('auth_token'))
                 <script>
                     localStorage.setItem('auth_token', @json(session('auth_token')));
                 </script>
-            @endif
+            @endif -->
 
             {{-- ========================= --}}
             {{-- Dashboard Overview Cards --}}
@@ -123,8 +123,9 @@
 
             {{-- Global Chat on Dashboard --}}
             <div id="chat-app"
-                 data-user="{{ auth()->id() }}"
-                 data-username="{{ auth()->user()->name }}">
+                    data-user="{{ auth()->id() }}"
+                    data-username="{{ auth()->user()->display_name ?? auth()->user()->name }}"
+                    data-default-room="{{ $defaultMatchId ?? '' }}">
             </div>
 
             <div id="quiz-zone"></div>

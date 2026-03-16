@@ -59,8 +59,15 @@ Route::get('/admin/dashboard/drilldown/{type}', [DrillDownController::class, 'lo
 
 
 
-// Show login form (GET)
-Route::get('/home', function () {
+// Root redirects based on auth status
+Route::get('/', function () {
+    return auth()->check() 
+        ? redirect()->route('dashboard') 
+        : redirect()->route('login');
+})->name('home');
+
+// Login page
+Route::get('/login', function () {
     return view('index');
 })->name('login')->middleware('guest');
 

@@ -95,8 +95,8 @@ class UserController extends Controller
         }
         // Always ensure one token per device
         $user->tokens()
-    ->where('device_id', $request->device_id)
-    ->delete();
+        ->where('device_id', $request->device_id)
+        ->delete();
 
         // Create token for this device
         $token = $user->createToken(

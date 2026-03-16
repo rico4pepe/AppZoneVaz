@@ -54,7 +54,7 @@ return [
     |
     */
 
-    'asset_url' => env('LIVEWIRE_ASSET_URL', '/livewire'),
+   'asset_url' => '/fanzone',
 
     /*
     |--------------------------------------------------------------------------

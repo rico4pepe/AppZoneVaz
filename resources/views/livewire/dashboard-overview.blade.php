@@ -83,14 +83,14 @@
 
         {{-- Charts --}}
         <div class="row g-3 mb-4">
-    <div class="col-md-3">
-            <div class="card h-100 cursor-pointer" data-bs-toggle="modal" data-bs-target="#drilldownModal" onclick="loadDrilldown('user-registrations')">
-            <div class="card-body">
-                <h5 class="card-title">User Registrations (Last 30 Days)</h5>
-                <canvas id="userChart" width="400" height="200"></canvas>
-            </div>
+            <div class="col-md-3">
+                <div class="card h-100 cursor-pointer" data-bs-toggle="modal" data-bs-target="#drilldownModal" onclick="loadDrilldown('user-registrations')">
+                    <div class="card-body">
+                        <h5 class="card-title">User Registrations (Last 30 Days)</h5>
+                        <canvas id="userChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
         </div>
-    </div>
     <div class="col-md-3">
          <div class="card h-100 cursor-pointer" data-bs-toggle="modal" data-bs-target="#drilldownModal" onclick="loadDrilldown('content-type-breakdown')">
             <div class="card-body">
@@ -230,7 +230,7 @@
         renderPollTrendChart(@json($pollChartLabels), @json($pollChartData));
     });
 
-    Livewire.hook('message.processed', () => {
+    document.addEventListener('livewire:update', () => {
         renderUserChart(@json($userChartLabels), @json($userChartData));
         renderContentChart(@json($contentChartLabels), @json($contentChartData));
         renderQuizAvgChart(@json($quizAvgChartLabels), @json($quizAvgChartData));

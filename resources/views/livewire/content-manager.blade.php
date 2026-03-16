@@ -1,4 +1,4 @@
-{{-- Assuming this is resources/views/livewire/content-manager.blade.php --}}
+
 <div> {{-- Livewire components require a single root element --}}
   
     <div class="main-content">
@@ -65,7 +65,7 @@
                   <label class="form-check-label" for="triviaType">Trivia</label>
                 </div>
                  @error('type') <span class="text-danger d-block">{{ $message }}</span> @enderror
-                 <p>Debug: Current type = {{ $type ?? 'null' }}</p> 
+                 <!-- <p>Debug: Current type = {{ $type ?? 'null' }}</p>  -->
               </div>
 
               <div class="mb-3">
@@ -74,6 +74,8 @@
                 <input type="text" class="form-control @error('title') is-invalid @enderror" id="title" placeholder="Enter content title" wire:model="title">
                 @error('title') <span class="invalid-feedback">{{ $message }}</span> @enderror
               </div>
+
+                
 
               <div class="mb-3">
                  {{-- Dynamically change label based on type or keep generic --}}
@@ -85,6 +87,23 @@
                 <textarea class="form-control @error('description') is-invalid @enderror" id="description" rows="3" placeholder="Enter description or question" wire:model="description"></textarea>
                  @error('description') <span class="invalid-feedback">{{ $message }}</span> @enderror
               </div>
+
+                @if ($type === 'trivia')
+                  <div class="mb-3">
+                      <label class="form-label">Correct Answer</label>
+
+                      <input 
+                          type="text"
+                          class="form-control @error('triviaAnswer') is-invalid @enderror"
+                          placeholder="Enter the correct answer"
+                          wire:model="triviaAnswer"
+                      >
+
+                      @error('triviaAnswer')
+                          <span class="invalid-feedback">{{ $message }}</span>
+                      @enderror
+                  </div>
+                  @endif
 
               {{-- Conditionally show Options section only for Quizzes --}}
               @if ($type === 'quiz' || $type === 'poll')

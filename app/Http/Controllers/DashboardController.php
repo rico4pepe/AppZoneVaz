@@ -43,9 +43,19 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Find default chat room match — live first, then upcoming
+        $defaultMatch = (clone $baseQuery)
+            ->whereIn('status', ['NS', 'LIVE', '1H', '2H', 'HT'])
+            ->orderByRaw("FIELD(status, 'LIVE', '1H', '2H', 'HT', 'NS')") // live first
+            ->orderBy('kickoff_at')
+            ->first();
+
+        $defaultMatchId = $defaultMatch?->id;
+
         return view('dashboard', compact(
             'liveMatches',
-            'recentMatches'
+            'recentMatches',
+            'defaultMatchId'
         ));
     }
 }

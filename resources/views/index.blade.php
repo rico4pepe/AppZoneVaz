@@ -317,7 +317,7 @@ loginForm.addEventListener('submit', async function (e) {
 
             // 🔐 Store token for future API / chat usage
             if (data.token) {
-                sessionStorage.setItem('auth_token', data.token);
+                localStorage.setItem('auth_token', data.token);
             }
 
             window.location.href = data.redirect;
@@ -379,7 +379,7 @@ async function submitForcedLogin() {
         if (response.ok && data.redirect) {
 
             if (data.token) {
-                sessionStorage.setItem('auth_token', data.token);
+                localStorage.setItem('auth_token', data.token);
             }
 
             window.location.href = data.redirect;

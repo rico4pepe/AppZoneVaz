@@ -12,16 +12,16 @@ class ContentManager extends Component
 
     public $type, $title, $description, $options = [], $correctOption = null;
     public $publishAt, $isFeatured = false, $isActive = true;
-    public $contentId = null, $expireAt;
+    public $contentId = null, $expireAt, $triviaAnswer;
 
     public function mount($id = null)
-{
-    if ($id) {
-        $this->loadContent($id);
-    } else {
-        $this->options = [['text' => '']];
-    }
-}
+        {
+            if ($id) {
+                $this->loadContent($id);
+            } else {
+                $this->options = [['text' => '']];
+            }
+        }
 
     public function addOption()
     {
@@ -63,6 +63,10 @@ class ContentManager extends Component
             return $opt->is_correct;
         });
     }
+
+    if ($content->type === 'trivia') {
+    $this->triviaAnswer = optional($content->options->first())->option_text;
+    }
 }
 
 
@@ -73,8 +77,9 @@ class ContentManager extends Component
             'type' => 'required|in:poll,quiz,trivia',
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'options' => $this->type !== 'trivia' ? 'required|array|min:2' : 'nullable',
-            'options.*.text' => $this->type !== 'trivia' ? 'required|string|max:255' : 'nullable',
+            'options' => in_array($this->type, ['poll','quiz']) ? 'required|array|min:2' : 'nullable',
+            'options.*.text' => in_array($this->type, ['poll','quiz']) ? 'required|string|max:255' : 'nullable',
+            'triviaAnswer' => $this->type === 'trivia' ? 'required|string|max:255' : 'nullable',
             'publishAt' => 'nullable|date',
             'expireAt' => 'nullable|date',
         ]);
@@ -84,6 +89,13 @@ class ContentManager extends Component
                 $this->addError('correctOption', 'Please select the correct answer.');
                 return;
             }
+        }
+
+            if ($this->type === 'trivia') {
+            $this->options = [
+                ['text' => $this->triviaAnswer]
+            ];
+            $this->correctOption = 0;
         }
 
         
@@ -118,12 +130,23 @@ class ContentManager extends Component
             ContentOption::create([
                 'content_id' => $content->id,
                 'option_text' => $option['text'],
-                'is_correct' => $this->type === 'quiz' && $this->correctOption == $index,
+                'is_correct' => in_array($this->type, ['quiz','trivia']) && $this->correctOption === $index,
             ]);
         }
 
         session()->flash('message', 'Content created successfully.');
-        $this->reset(['type', 'title', 'description', 'options', 'correctOption', 'publishAt', 'isFeatured', 'isActive']);
+      $this->reset([
+                    'type',
+                    'title',
+                    'description',
+                    'options',
+                    'correctOption',
+                    'publishAt',
+                    'isFeatured',
+                    'isActive',
+                    'triviaAnswer',
+                    'expireAt'
+                    ]);
         $this->options = [['text' => '']];
     }
 

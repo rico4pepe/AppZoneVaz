@@ -10,6 +10,7 @@ class ModeratedMessage extends Model
     use HasFactory;
 
     protected $fillable = [
+        'chat_message_id',
         'user_id',
         'message',
         'categories',
@@ -23,5 +24,10 @@ class ModeratedMessage extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function chatMessage()
+    {
+        return $this->belongsTo(ChatMessage::class); // add this
     }
 }

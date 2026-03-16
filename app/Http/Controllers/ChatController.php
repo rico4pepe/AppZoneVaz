@@ -13,6 +13,7 @@ use App\Models\UserWarning;
 use App\Models\Mention;
 use App\Models\ModeratedMessage;
 use App\Models\Fixture;
+use Illuminate\Support\Facades\DB;
 
 
 class ChatController extends Controller
@@ -22,7 +23,7 @@ class ChatController extends Controller
     {
         $validated = $request->validate([
             'message' => 'required|string|max:1000',
-            'event_id' => 'nullable|exists:fixtures,id',
+            'match_id' => 'nullable|exists:matches,id',
 
         ]);
     
@@ -65,7 +66,7 @@ class ChatController extends Controller
         // ✅ Continue sending
         $message = ChatMessage::create([
             'user_id' => Auth::id(),
-            'event_id' => $validated['event_id'] ?? null,
+             'match_id'  => $validated['match_id'] ?? null,
             'message' => $validated['message'],
             'is_hidden' => false,
         ]);
@@ -73,7 +74,9 @@ class ChatController extends Controller
         // Mentions
         preg_match_all('/@(\w+)/', $validated['message'], $matches);
         foreach ($matches[1] ?? [] as $username) {
-            $mentionedUser = \App\Models\User::where('username', $username)->first();
+            $mentionedUser = User::where('display_name', $username)
+                     ->orWhere('name', $username)
+                     ->first();
             if ($mentionedUser) {
                 Mention::create([
                     'chat_message_id' => $message->id,
@@ -89,19 +92,49 @@ class ChatController extends Controller
     }
 
     // Fetch messages (optionally filter by event)y
-    public function fetchMessages(Request $request)
+   public function fetchMessages(Request $request)
     {
-        $eventId = $request->query('event_id');
+        $matchId = $request->query('match_id');
+        $after   = $request->query('after'); // incremental polling support
 
         $query = ChatMessage::with('user')->where('is_hidden', false);
 
-        if ($eventId) {
-            $query->where('event_id', $eventId);
+        if ($matchId) {
+            $query->where('match_id', $matchId);
+        } else {
+            $query->whereNull('match_id');
         }
 
-        $messages = $query->latest()->take(50)->get()->reverse()->values();
+        // If after is provided, only return new messages
+        if ($after) {
+            $query->where('id', '>', $after);
+            $messages = $query->oldest()->get();
+        } else {
+            $messages = $query->latest()->take(50)->get()->reverse()->values();
+        }
 
-        return response()->json($messages);
+        DB::table('chat_presence')->updateOrInsert(
+            [
+                'user_id' => auth()->id(),
+                'match_id' => $matchId
+            ],
+            [
+                'last_seen' => now()
+            ]
+        );
+
+       $activeFans = DB::table('chat_presence')
+        ->where('last_seen', '>=', now()->subSeconds(30))
+        ->when($matchId, fn($q) => $q->where('match_id', $matchId),
+                        fn($q) => $q->whereNull('match_id'))
+        ->count();
+
+
+
+        return response()->json([
+            'messages' => $messages,
+            'fans' => $activeFans
+        ]);
     }
 
 

@@ -14,10 +14,13 @@ class QuizController extends Controller
 {
     public function submit(Request $request, Content $content)
     {
+         abort_if(!$content->isInteractable(), 403);
         $request->validate([
             'answers' => 'required|array',
             'answers.*.option_id' => 'required|integer|exists:content_options,id',
         ]);
+
+       
 
         $user = auth()->user();
 
@@ -67,6 +70,8 @@ class QuizController extends Controller
         $request->validate([
             'option_id' => 'required|integer|exists:content_options,id',
         ]);
+
+        abort_if(!$content->isInteractable(), 403);
 
         $user = auth()->user();
 
@@ -120,14 +125,10 @@ class QuizController extends Controller
 
 public function list()
 {
-    $quizzes = Content::with('options')
+     $quizzes = Content::visible()
         ->where('type', 'quiz')
-        ->where('is_active', true)
-        ->where(function($query) {
-            $query->whereNull('expire_at') // Include if expire_at is null
-                  ->orWhere('expire_at', '>', now()); // Or if expiration is in future
-        })
-        ->select('id', 'title', 'description')
+        ->with('options')
+        ->select('id','title','description')
         ->latest()
         ->take(5)
         ->get();
