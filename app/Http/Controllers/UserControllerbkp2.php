@@ -10,7 +10,6 @@ use App\Models\SubscriptionRenewal;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
-use App\Services\SubscriptionState;
 class UserController extends Controller
 {
     /**
@@ -66,9 +65,12 @@ class UserController extends Controller
         $user = User::where('phone_number', $request->phone_number)->first();
 
         // Subscription check
-        $subscriptionState = app(SubscriptionState::class);
-
-        $isExpired = $subscriptionState->isExpired($user);
+        if ($user->expires_at && now()->greaterThan($user->expires_at)) {
+            return response()->json([
+                'message' => 'Your subscription has expired.',
+                'expired' => true
+            ], 403);
+        }
 
         // Optional Wi-Fi / SMS token check
         if ($request->filled('token') && $user->token !== $request->token) {
@@ -97,14 +99,14 @@ class UserController extends Controller
         ->delete();
 
         // Create token for this device
-        $newToken = $user->createToken('auth_token', ['*']);
-
-        $newToken->accessToken->forceFill([
-            'device_id'  => $request->device_id,
-            'user_agent' => $request->userAgent(),
-        ])->save();
-
-        $token = $newToken->plainTextToken;
+        $token = $user->createToken(
+            'auth_token',
+            ['*'],
+            [
+                'device_id'  => $request->device_id,
+                'user_agent' => $request->userAgent(),
+            ]
+        )->plainTextToken;
 
         // Session login for HTML
         auth()->login($user);
@@ -118,12 +120,6 @@ class UserController extends Controller
         return response()->json([
             'user'   => $user,
             'token'  => $token,
-            'subscription' => [
-            'active' => !$isExpired,
-            'expired' => $isExpired,
-            'expires_at' => $user->expires_at,
-            'days_remaining' => $subscriptionState->daysRemaining($user),
-        ],
             'redirect' => route('dashboard')
         ]);
     }
@@ -226,31 +222,25 @@ public function logout(Request $request)
          $newPlan = $this->validatePurchaseCode($request->purchase_code);
 
         if (!$newPlan) {
-            return response()->json(['message' => 'Invalid or expired purchase code'], 400);
+             return response()->json(['message' => 'Invalid or expired purchase code'], 400);
         }
 
             // Store the previous expiry date before renewal
-            
-            $previousExpiresAt = $user->expires_at;
-            $baseDate = $user->expires_at && now()->lt($user->expires_at)
-            ? $user->expires_at
-            : now();
+            $previousExpiresAt = $user->expires_at ?? Carbon::now();
 
         // Extend subscription based on current plan
-          $subscriptionDuration = [
-                'Daily' => $baseDate->copy()->addDay(),
-                'Weekly' => $baseDate->copy()->addWeek(),
-                'Monthly' => $baseDate->copy()->addMonth(),
+            $subscriptionDuration = [
+            'Daily' => Carbon::now()->addDay(),
+            'Weekly' => Carbon::now()->addWeek(),
+            'Monthly' => Carbon::now()->addMonth(),
         ];
 
-
-            $newExpiresAt = $subscriptionDuration[$newPlan];
-        //$user->expires_at = $subscriptionDuration[$newPlan];
-
         $user->plan = $newPlan;
-        $user->subscribed_at = now();
-        $user->expires_at = $newExpiresAt;
-       
+        $user->subscribed_at = Carbon::now();
+        $user->expires_at = $subscriptionDuration[$user->plan];
+        // Using update() instead of save()
+        $user->subscribed_at = Carbon::now();
+        $user->expires_at = $subscriptionDuration[$user->plan] ?? Carbon::now()->addDay();
         $user->save();
 
 
@@ -259,7 +249,6 @@ public function logout(Request $request)
                 'user_id' => $user->id,
                 'purchase_code' => $request->purchase_code,
                 'previous_expires_at' => $previousExpiresAt,
-                 'base_date' => $baseDate,
                 'new_expires_at' => $user->expires_at
             ]);
 
@@ -380,7 +369,6 @@ public function fullReport(Request $request)
 
 
 }
-
 
 
 

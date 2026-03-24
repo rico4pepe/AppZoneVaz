@@ -12,10 +12,10 @@
 
                <div class="row mt-4">
                 <div class="col-12">
-                    <h4 class="mb-4">🗳️ All Quiz</h4>
+                    <h4 class="mb-4">🗳️ Content Feed</h4>
 
-                    {{-- React Quiz App Mount Point --}}
-                    <div id="quiz-app"
+                    {{-- React Feed App Mount Point --}}
+                    <div id="feed-app"
                          data-user="{{ auth()->id() }}"
                          data-token="{{ csrf_token() }}">
                     </div>

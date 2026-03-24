@@ -1,17 +1,17 @@
 import React, { useEffect, useState } from 'react';
 
-export default function QuizApp({ userId }) {
+const API_BASE = '/fanzone/api';
+
+export default function QuizApp() {
     const [quizzes, setQuizzes] = useState([]);
     const [quizIndex, setQuizIndex] = useState(0);
     const [selectedOption, setSelectedOption] = useState(null);
-    const [answered, setAnswered] = useState(false);
+    const [answeredMap, setAnsweredMap] = useState({});
     const [loading, setLoading] = useState(true);
-    const [isCorrect, setIsCorrect] = useState(null);
-    const [correctOptionId, setCorrectOptionId] = useState(null);
-    const [selectedOptionId, setSelectedOptionId] = useState(null);
 
     const token = localStorage.getItem('auth_token');
     const currentQuiz = quizzes[quizIndex] || null;
+    const currentState = currentQuiz ? answeredMap[currentQuiz.id] : null;
 
     useEffect(() => {
         if (!token) return;
@@ -20,7 +20,7 @@ export default function QuizApp({ userId }) {
             setLoading(true);
 
             try {
-                const res = await fetch('/api/quizzes', {
+                const res = await fetch(`${API_BASE}/quizzes`, {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${token}`
@@ -30,9 +30,26 @@ export default function QuizApp({ userId }) {
                 const data = await res.json();
                 setQuizzes(data);
 
-                if (data.length > 0) {
-                    await checkIfAnswered(data[0].id);
+                // preload answered state
+                const stateMap = {};
+                for (const quiz of data) {
+                    const res = await fetch(`${API_BASE}/quiz/${quiz.id}/check-answered`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const result = await res.json();
+
+                    stateMap[quiz.id] = result.answered
+                        ? {
+                            answered: true,
+                            correct: result.correct,
+                            correct_option_id: result.correct_option_id,
+                            selected_option_id: result.selected_option_id
+                        }
+                        : { answered: false };
                 }
+
+                setAnsweredMap(stateMap);
+
             } catch (error) {
                 console.error("Error loading quizzes", error);
             } finally {
@@ -43,35 +60,11 @@ export default function QuizApp({ userId }) {
         loadQuizzes();
     }, []);
 
-    const checkIfAnswered = async (quizId) => {
-        try {
-            const res = await fetch(`/api/quiz/${quizId}/check-answered`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            
-            const data = await res.json();
-            
-            setAnswered(data.answered);
-            
-            if (data.answered) {
-                setIsCorrect(data.correct);
-                setCorrectOptionId(data.correct_option_id);
-                setSelectedOptionId(data.selected_option_id);
-            } else {
-                setIsCorrect(null);
-                setCorrectOptionId(null);
-                setSelectedOptionId(null);
-            }
-        } catch (error) {
-            console.error("Error checking if quiz was answered", error);
-        }
-    };
-
     const submitAnswer = async () => {
         if (!selectedOption) return alert("Please select an option");
 
         try {
-            const res = await fetch(`/api/quiz/${currentQuiz.id}/answer`, {
+            const res = await fetch(`${API_BASE}/quiz/${currentQuiz.id}/answer`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -82,14 +75,21 @@ export default function QuizApp({ userId }) {
 
             const data = await res.json();
 
-            if (res.ok) {
-                setAnswered(true);
-                setIsCorrect(data.correct);
-                setCorrectOptionId(data.correct_option_id);
-                setSelectedOptionId(selectedOption);
-            } else {
+            if (!res.ok) {
                 alert(data.message || "Failed to submit answer.");
+                return;
             }
+
+            setAnsweredMap(prev => ({
+                ...prev,
+                [currentQuiz.id]: {
+                    answered: true,
+                    correct: data.correct,
+                    correct_option_id: data.correct_option_id,
+                    selected_option_id: selectedOption
+                }
+            }));
+
         } catch (error) {
             console.error("Error submitting answer", error);
             alert("An error occurred while submitting your answer.");
@@ -101,33 +101,44 @@ export default function QuizApp({ userId }) {
         if (newIndex >= 0 && newIndex < quizzes.length) {
             setQuizIndex(newIndex);
             setSelectedOption(null);
-            checkIfAnswered(quizzes[newIndex].id);
         }
     };
 
     const getOptionClassName = (optionId) => {
-        if (!answered) return "form-check mb-2";
-        
+        if (!currentState?.answered) return "form-check mb-2";
+
         let className = "form-check mb-2";
-        
-        if (optionId === selectedOptionId) {
-            className += isCorrect ? " text-success fw-bold" : " text-danger fw-bold";
-        } else if (optionId === correctOptionId) {
+
+        if (optionId === currentState.selected_option_id) {
+            className += currentState.correct ? " text-success fw-bold" : " text-danger fw-bold";
+        } else if (optionId === currentState.correct_option_id) {
             className += " text-success fw-bold";
         }
-        
+
         return className;
     };
 
-    if (loading) return <div className="d-flex justify-content-center p-4"><div className="spinner-border" role="status"></div></div>;
-    if (!currentQuiz) return <div className="alert alert-info">No quizzes available right now.</div>;
+    if (loading) {
+        return (
+            <div className="d-flex justify-content-center p-4">
+                <div className="spinner-border" role="status"></div>
+            </div>
+        );
+    }
+
+    if (!currentQuiz) {
+        return <div className="alert alert-info">No quizzes available right now.</div>;
+    }
 
     return (
         <div className="card shadow mt-4">
             <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                 <h5 className="m-0">{currentQuiz.title}</h5>
-                <span className="badge bg-light text-primary">Question {quizIndex + 1} of {quizzes.length}</span>
+                <span className="badge bg-light text-primary">
+                    Question {quizIndex + 1} of {quizzes.length}
+                </span>
             </div>
+
             <div className="card-body">
                 <p>{currentQuiz.description}</p>
 
@@ -141,25 +152,31 @@ export default function QuizApp({ userId }) {
                                 value={option.id}
                                 id={`quiz-option-${option.id}`}
                                 onChange={() => setSelectedOption(option.id)}
-                                checked={answered ? option.id === selectedOptionId : option.id === selectedOption}
-                                disabled={answered}
+                                checked={
+                                    currentState?.answered
+                                        ? option.id === currentState.selected_option_id
+                                        : option.id === selectedOption
+                                }
+                                disabled={currentState?.answered}
                             />
                             <label className="form-check-label" htmlFor={`quiz-option-${option.id}`}>
                                 {option.option_text}
-                                {answered && option.id === correctOptionId && " ✓"}
+                                {currentState?.answered && option.id === currentState.correct_option_id && " ✓"}
                             </label>
                         </div>
                     ))}
                 </div>
 
-                {answered ? (
-                    <div className={`alert ${isCorrect ? "alert-success" : "alert-danger"} mt-3`}>
-                        <h6 className="mb-0">
-                            {isCorrect ? "✅ Correct!" : "❌ Incorrect."}
-                        </h6>
+                {currentState?.answered ? (
+                    <div className={`alert ${currentState.correct ? "alert-success" : "alert-danger"}`}>
+                        {currentState.correct ? "✅ Correct!" : "❌ Incorrect."}
                     </div>
                 ) : (
-                    <button className="btn btn-success mt-2" onClick={submitAnswer} disabled={!selectedOption}>
+                    <button
+                        className="btn btn-success"
+                        onClick={submitAnswer}
+                        disabled={!selectedOption}
+                    >
                         Submit Answer
                     </button>
                 )}

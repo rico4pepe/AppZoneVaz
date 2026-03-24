@@ -29,6 +29,10 @@ export default function ChatApp() {
     const chatElement = document.getElementById('chat-app');
     const username    = chatElement?.dataset?.username;
     const defaultRoom = chatElement?.dataset?.defaultRoom; // pass match_id from Blade
+    const intervalRef = useRef(null);
+    const delayRef = useRef(3000);
+    const [typingUsers, setTypingUsers] = useState([]);
+    const typingTimeoutRef = useRef(null);
 
     // Auto-join match room if on match page
     useEffect(() => {
@@ -47,9 +51,19 @@ export default function ChatApp() {
     }, [token]);
 
     // Scroll to bottom on new messages
-    useEffect(() => {
+   useEffect(() => {
+    const container = messagesEndRef.current?.parentElement;
+    if (!container) return;
+
+    const isAtBottom =
+        container.scrollHeight - container.scrollTop <= container.clientHeight + 50;
+
+    if (isAtBottom) {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+    }
+}, [messages]);
+
+
 
     // Fetch messages — incremental after first load
     const fetchMessages = useCallback(async () => {
@@ -63,14 +77,19 @@ export default function ChatApp() {
             });
             const data = await res.json();
 
-            const { messages: newMessages, fans: activeFans } = data;
+            const { messages: newMessages, fans: activeFans, typing  } = data;
             setFans(activeFans);
+            setTypingUsers(typing || []);
 
             if (!Array.isArray(newMessages) || newMessages.length === 0) return;
             lastSeenIdRef.current = newMessages[newMessages.length - 1].id;
             setMessages(prev => {
-                if (!lastSeenIdRef.current || prev.length === 0) return newMessages;
-                return [...prev, ...newMessages];
+                const existingIds = new Set(prev.map(m => m.id));
+                const filtered = newMessages.filter(m => !existingIds.has(m.id));
+
+                if (prev.length === 0) return newMessages;
+
+                return [...prev, ...filtered];
             });
             if (username) {
                 const mentioned = newMessages.find(m => m.message.includes(`@${username}`));
@@ -85,6 +104,21 @@ export default function ChatApp() {
         }
     }, [matchId, token, username]);
 
+    const sendTyping = async () => {
+    try {
+        await fetch('/fanzone/api/chat/typing', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+            },
+            body: JSON.stringify({ match_id: matchId })
+        });
+    } catch (err) {
+        console.error('Typing error', err);
+    }
+};
+
     // Reset + reload when room changes
     useEffect(() => {
         if (!token) return;
@@ -94,11 +128,56 @@ export default function ChatApp() {
     }, [matchId, token]); // intentionally excludes fetchMessages
 
     // Poll every 5 seconds
-    useEffect(() => {
-        if (!token) return;
-        const interval = setInterval(fetchMessages, 5000);
-        return () => clearInterval(interval);
-    }, [fetchMessages, token]);
+   useEffect(() => {
+    if (!token) return;
+
+    const stopPolling = () => {
+        if (intervalRef.current) {
+            clearInterval(intervalRef.current);
+            intervalRef.current = null;
+        }
+    };
+
+    const startPolling = () => {
+        stopPolling();
+
+        intervalRef.current = setInterval(async () => {
+            const before = lastSeenIdRef.current;
+
+            await fetchMessages();
+
+            const after = lastSeenIdRef.current;
+
+            // 🔥 Adaptive polling
+            if (before === after) {
+                delayRef.current = Math.min(delayRef.current + 1000, 10000);
+            } else {
+                delayRef.current = 3000;
+            }
+
+            startPolling(); // restart with new delay
+        }, delayRef.current);
+    };
+
+    const handleVisibility = () => {
+        if (document.hidden) {
+            stopPolling();
+        } else {
+            delayRef.current = 3000;
+            startPolling();
+        }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    startPolling();
+
+    return () => {
+        stopPolling();
+        document.removeEventListener('visibilitychange', handleVisibility);
+    };
+
+}, [fetchMessages, token]);
 
     const sendMessage = async () => {
         if (!message.trim()) return;
@@ -133,77 +212,116 @@ export default function ChatApp() {
         }
     };
 
-    return (
-        <div className="chat-wrapper" style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 9999 }}>
-            <div className="card shadow" style={{ width: '100%', maxWidth: '500px' }}>
-                <div className="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                   <span>💬 Fan Zone Chat {fans > 0 && <small className="ms-2 opacity-75">👥 {fans} online</small>}</span>
+   return (
+    <div className="fz-chat">
 
-                    <select
-                        className="form-select mx-2"
-                        value={matchId || ''}
-                        onChange={e => {
-                            lastSeenIdRef.current = null;
-                            setMatchId(e.target.value ? parseInt(e.target.value) : null);
-                        }}
-                    >
-                        {rooms.map(room => (
-                            <option key={room.id ?? 'global'} value={room.id || ''}>
-                                {room.name}
-                            </option>
-                        ))}
-                    </select>
-
-                    <button className="btn btn-sm btn-light" onClick={() => setMinimized(!minimized)}>
-                        {minimized ? '🔼' : '🔽'}
-                    </button>
-                </div>
-
-                {!minimized && (
-                    <>
-                        <div className="card-body" style={{ height: 300, overflowY: 'auto', background: '#fffbea' }}>
-                           {messages.map((msg) => (
-
-                            msg.type === 'system' ?
-
-                            <div key={msg.id} className="text-center text-muted my-2">
-                                {msg.message}
-                            </div>
-
-                            :
-
-                            <div key={msg.id} className="mb-1">
-                                <strong>{msg.user?.display_name || msg.user?.name}</strong>: <MessageText text={msg.message} />
-                            </div>
-
-                        ))}
-                            <div ref={messagesEndRef} />
-                        </div>
-
-                        <div className="card-footer d-flex">
-                            <input
-                                className="form-control me-2"
-                                value={message}
-                                onChange={e => setMessage(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder="Type a message... use @name to mention"
-                            />
-                            <button className="btn btn-success" onClick={sendMessage}>Send</button>
-                        </div>
-                    </>
-                )}
+        {/* HEADER */}
+        <div className="fz-chat-header">
+            <div className="fz-chat-title">
+                💬 Fan Chat
+                {fans > 0 && <span className="fz-chat-fans">👥 {fans}</span>}
             </div>
 
-            {toast && (
-                <div className="position-fixed bottom-0 end-0 p-3" style={{ zIndex: 1050 }}>
-                    <div className="toast show align-items-center text-bg-primary border-0">
-                        <div className="d-flex">
-                            <div className="toast-body">{toast}</div>
-                            <button type="button" className="btn-close btn-close-white me-2 m-auto" onClick={() => setToast(null)} />
+            <select
+                className="fz-chat-room"
+                value={matchId || ''}
+                onChange={e => {
+                    lastSeenIdRef.current = null;
+                    setMatchId(e.target.value ? parseInt(e.target.value) : null);
+                }}
+            >
+                {rooms.map(room => (
+                    <option key={room.id ?? 'global'} value={room.id || ''}>
+                        {room.name}
+                    </option>
+                ))}
+            </select>
+        </div>
+
+        {/* MESSAGES */}
+        <div className="fz-chat-body">
+
+            {messages.map(msg => {
+
+                if (msg.type === 'system') {
+                    return (
+                        <div key={msg.id} className="fz-chat-system">
+                            {msg.message}
+                        </div>
+                    );
+                }
+
+                const isMe = msg.user?.name === username;
+
+                return (
+                    <div
+                        key={msg.id}
+                        className={`fz-chat-row ${isMe ? 'me' : ''}`}
+                    >
+                        <div className="fz-chat-bubble">
+
+                            {!isMe && (
+                                <div className="fz-chat-user">
+                                    {msg.user?.display_name || msg.user?.name}
+                                </div>
+                            )}
+
+                            <div className="fz-chat-text">
+                                <MessageText text={msg.message} />
+                            </div>
+
                         </div>
                     </div>
+                );
+            })}
+
+            {/* Typing */}
+            {typingUsers.length > 0 && (
+                <div className="fz-chat-typing">
+                    {typingUsers.length === 1
+                        ? `${typingUsers[0]} is typing...`
+                        : 'People are typing...'}
                 </div>
             )}
+
+            <div ref={messagesEndRef} />
         </div>
-    );
+
+        {/* INPUT */}
+        <div className="fz-chat-input">
+
+            <input
+                className="fz-chat-textbox"
+                value={message}
+                onChange={e => {
+                    setMessage(e.target.value);
+
+                    if (!typingTimeoutRef.current) {
+                        sendTyping();
+                        typingTimeoutRef.current = setTimeout(() => {
+                            typingTimeoutRef.current = null;
+                        }, 2000);
+                    }
+                }}
+                onKeyDown={handleKeyDown}
+                placeholder="Message..."
+            />
+
+            <button
+                className="fz-chat-send"
+                onClick={sendMessage}
+            >
+                ➤
+            </button>
+
+        </div>
+
+        {/* TOAST */}
+        {toast && (
+            <div className="fz-chat-toast">
+                {toast}
+            </div>
+        )}
+    </div>
+);
 }

@@ -21,9 +21,7 @@ use App\Http\Controllers\PreferencesController;
 |
 */
 
-// Route::get('/', function () {
-//     return view('welcome');
-// })->name('home');
+
 
 
 
@@ -75,17 +73,7 @@ Route::post('/login', [UserController::class, 'login'])->name('login.custom');
 Route::get('/admin/reports/users', [UserController::class, 'fullReport'])->name('admin.reports.users');
 
 
-// Route::get('/dashboard', function () {
 
-//     Log::info('Dashboard route hit');
-//     return view('dashboard');
-
-// })->middleware('auth')->name('dashboard');
-
-
-// Route::middleware(['auth', 'has.preferences'])->group(function () {
-//     Route::get('/dashboard', DashboardController::class)->name('dashboard');
-// });
 
 
 
@@ -106,6 +94,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/polls', fn() => view('polls'))->name('polls');
     Route::get('/quizzes', fn() => view('quizz'))->name('quizzes');
    // Route::get('/trivia', fn() => view('trivia'))->name('trivia');
+   Route::get('/feed', fn() => view('feed'))->name('feed');
     Route::post('/user/setup-preference', [UserController::class, 'updateUserPreference'])->name('user.setup-preference');
 });
 

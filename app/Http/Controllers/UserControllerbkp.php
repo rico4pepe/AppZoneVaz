@@ -10,6 +10,7 @@ use App\Models\SubscriptionRenewal;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Services\SubscriptionState;
 class UserController extends Controller
 {
     /**
@@ -53,53 +54,80 @@ class UserController extends Controller
     }
 
 
-    public function login(Request $request)
+   public function login(Request $request)
     {
         $request->validate([
             'phone_number' => 'required|string|exists:users,phone_number',
-            'token' => 'nullable|string'
+            'token'        => 'nullable|string',
+            'device_id'    => 'required|string',
+            'force'        => 'nullable|boolean',
         ]);
-    
-        // Fetch user
+
         $user = User::where('phone_number', $request->phone_number)->first();
 
-                // Check if user's subscription has expired
-            if ($user->expires_at && now()->greaterThan($user->expires_at)) {
-                return response()->json([
-                    'message' => 'Your subscription has expired. Please renew your data plan to continue.',
-                    'expired' => true
-                ], 403);
-            }
-    
-                // Token verification (WiFi use)
-                if ($request->has('token') && $user->token !== $request->token) {
-                    return response()->json(['message' => 'Invalid token'], 401);
-                }
-            
-                // Prevent login if already logged in on another device
-                if ($user->tokens()->count() > 0) {
-                    return response()->json([
-                        'message' => 'Already logged in on another device. Please log out first.'
-                    ], 403);
-                }
-    
-                // Generate personal access token (for API use)
-                $token = $user->createToken('auth_token')->plainTextToken;
-            
-                // Check if it's an API request
-                if ($request->wantsJson() || $request->ajax()) {
-                    return response()->json([
-                        'user' => $user,
-                        'token' => $token,
-                        'redirect' => route('dashboard')
-                    ]);
-                }
-                // 🔥 FIX: Laravel Sanctum doesn’t auto-login to session, so if you want session-based login:
-                auth()->login($user); // create Laravel session
-            
-                // Now redirect to dashboard (HTML)
-                return redirect()->route('dashboard')->with('auth_token', $token);
+        // Subscription check
+        $subscriptionState = app(SubscriptionState::class);
+
+        $isExpired = $subscriptionState->isExpired($user);
+
+        // Optional Wi-Fi / SMS token check
+        if ($request->filled('token') && $user->token !== $request->token) {
+            return response()->json(['message' => 'Invalid token'], 401);
+        }
+
+        // Check for active token on another device
+        $activeToken = $user->tokens()
+            ->where('device_id', '!=', $request->device_id)
+            ->first();
+
+        if ($activeToken && !$request->boolean('force')) {
+            return response()->json([
+                'message' => 'You are logged in on another device.',
+                'requires_confirmation' => true
+            ], 409);
+        }
+
+        // Force logout other devices
+        if ($request->boolean('force')) {
+            $user->tokens()->delete();
+        }
+        // Always ensure one token per device
+        $user->tokens()
+        ->where('device_id', $request->device_id)
+        ->delete();
+
+        // Create token for this device
+        $newToken = $user->createToken('auth_token', ['*']);
+
+        $newToken->accessToken->forceFill([
+            'device_id'  => $request->device_id,
+            'user_agent' => $request->userAgent(),
+        ])->save();
+
+        $token = $newToken->plainTextToken;
+
+        // Session login for HTML
+        auth()->login($user);
+
+        // Update observability fields
+        $user->update([
+            'last_login_at' => now(),
+            'last_login_ip' => $request->ip(),
+        ]);
+
+        return response()->json([
+            'user'   => $user,
+            'token'  => $token,
+            'subscription' => [
+            'active' => !$isExpired,
+            'expired' => $isExpired,
+            'expires_at' => $user->expires_at,
+            'days_remaining' => $subscriptionState->daysRemaining($user),
+        ],
+            'redirect' => route('dashboard')
+        ]);
     }
+
 
 
     public function updateUserPreference(Request $request)
@@ -198,25 +226,31 @@ public function logout(Request $request)
          $newPlan = $this->validatePurchaseCode($request->purchase_code);
 
         if (!$newPlan) {
-             return response()->json(['message' => 'Invalid or expired purchase code'], 400);
+            return response()->json(['message' => 'Invalid or expired purchase code'], 400);
         }
 
             // Store the previous expiry date before renewal
-            $previousExpiresAt = $user->expires_at ?? Carbon::now();
+            
+            $previousExpiresAt = $user->expires_at;
+            $baseDate = $user->expires_at && now()->lt($user->expires_at)
+            ? $user->expires_at
+            : now();
 
         // Extend subscription based on current plan
-            $subscriptionDuration = [
-            'Daily' => Carbon::now()->addDay(),
-            'Weekly' => Carbon::now()->addWeek(),
-            'Monthly' => Carbon::now()->addMonth(),
+          $subscriptionDuration = [
+                'Daily' => $baseDate->copy()->addDay(),
+                'Weekly' => $baseDate->copy()->addWeek(),
+                'Monthly' => $baseDate->copy()->addMonth(),
         ];
 
+
+            $newExpiresAt = $subscriptionDuration[$newPlan];
+        //$user->expires_at = $subscriptionDuration[$newPlan];
+
         $user->plan = $newPlan;
-        $user->subscribed_at = Carbon::now();
-        $user->expires_at = $subscriptionDuration[$user->plan];
-        // Using update() instead of save()
-        $user->subscribed_at = Carbon::now();
-        $user->expires_at = $subscriptionDuration[$user->plan] ?? Carbon::now()->addDay();
+        $user->subscribed_at = now();
+        $user->expires_at = $newExpiresAt;
+       
         $user->save();
 
 
@@ -225,6 +259,7 @@ public function logout(Request $request)
                 'user_id' => $user->id,
                 'purchase_code' => $request->purchase_code,
                 'previous_expires_at' => $previousExpiresAt,
+                 'base_date' => $baseDate,
                 'new_expires_at' => $user->expires_at
             ]);
 

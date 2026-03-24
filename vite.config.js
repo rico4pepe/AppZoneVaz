@@ -9,7 +9,10 @@ export default defineConfig({
                 'resources/js/app.js', 
                 'resources/js/chat.jsx', 
                 'resources/js/poll.jsx', 
-                'resources/js/quizz.jsx'
+                'resources/js/quizz.jsx',
+                'resources/js/trivia.jsx',
+                'resources/js/feed.jsx',
+                'resources/js/leaderboard-widget.jsx'
             ],
             refresh: true,
         }),

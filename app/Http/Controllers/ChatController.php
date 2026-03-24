@@ -14,6 +14,7 @@ use App\Models\Mention;
 use App\Models\ModeratedMessage;
 use App\Models\Fixture;
 use Illuminate\Support\Facades\DB;
+use App\Services\SubscriptionState;
 
 
 class ChatController extends Controller
@@ -24,59 +25,65 @@ class ChatController extends Controller
         $validated = $request->validate([
             'message' => 'required|string|max:1000',
             'match_id' => 'nullable|exists:matches,id',
-
         ]);
-    
-        $ban = ChatBan::where('user_id', Auth::id())
-                    ->where(function ($q) {
-                        $q->whereNull('banned_until')->orWhere('banned_until', '>', now());
-                    })->first();
-    
+
+        $user = Auth::user();
+
+        // 🔒 Ban check (highest priority)
+        $ban = ChatBan::where('user_id', $user->id)
+            ->where(function ($q) {
+                $q->whereNull('banned_until')
+                ->orWhere('banned_until', '>', now());
+            })->first();
+
         if ($ban) {
             return response()->json([
                 'message' => 'You are banned from sending messages.',
                 'reason' => $ban->reason,
             ], 403);
         }
-    
-        // 🔍 Moderate message using OpenAI
-        // $client = app(\OpenAI\Client::class);
-        // $result = $client->moderations()->create([
-        //     'input' => $validated['message']
-        // ]);
-    
-        // $flagged = $result->results[0]->flagged;
-    
-        // if ($flagged) {
-        //     // Log the flagged message
-        //     ModeratedMessage::create([
-        //         'user_id' => Auth::id(),
-        //         'message' => $validated['message'],
-        //         'categories' => json_encode($result->results[0]->categories),
-        //         'severity' => $result->results[0]->category_scores->toArray()['sexual'] ?? null, // optional
-        //     ]);
-    
-        //     return response()->json([
-        //         'message' => 'Your message was flagged by moderation and not sent.'
-        //     ], 422);
-        // }
 
-        Log::info('Chat message from user: ' . Auth::id());
-    
-        // ✅ Continue sending
+        // 🔒 Feature Gate - send permission
+        if (!\App\Services\FeatureGate::allows($user, 'chat.send')) {
+            return response()->json([
+                'message' => 'Upgrade to send messages',
+                'upgrade_required' => true
+            ], 403);
+        }
+
+        // ⚡ Feature Gate - rate limiting (Daily users)
+        if (!\App\Services\FeatureGate::allows($user, 'chat.unlimited')) {
+
+            $lastMessage = ChatMessage::where('user_id', $user->id)
+                ->latest()
+                ->first();
+
+            if ($lastMessage && now()->diffInSeconds($lastMessage->created_at) < 10) {
+                return response()->json([
+                    'message' => 'Slow down! Upgrade to send messages faster.',
+                    'upgrade_required' => true
+                ], 429);
+            }
+        }
+
+        \Log::info('Chat message from user: ' . $user->id);
+
+        // ✅ Create message
         $message = ChatMessage::create([
-            'user_id' => Auth::id(),
-             'match_id'  => $validated['match_id'] ?? null,
+            'user_id' => $user->id,
+            'match_id' => $validated['match_id'] ?? null,
             'message' => $validated['message'],
             'is_hidden' => false,
         ]);
-    
-        // Mentions
+
+        // 🔔 Mentions handling
         preg_match_all('/@(\w+)/', $validated['message'], $matches);
+
         foreach ($matches[1] ?? [] as $username) {
             $mentionedUser = User::where('display_name', $username)
-                     ->orWhere('name', $username)
-                     ->first();
+                ->orWhere('name', $username)
+                ->first();
+
             if ($mentionedUser) {
                 Mention::create([
                     'chat_message_id' => $message->id,
@@ -84,56 +91,94 @@ class ChatController extends Controller
                 ]);
             }
         }
-    
+
+        // 📦 Prepare response
+        $messageData = $message->load('user')->toArray();
+
+        // ⭐ Premium flag (monthly users)
+        $messageData['user']['is_premium'] = \App\Services\FeatureGate::allows($user, 'chat.vip');
+
         return response()->json([
             'message' => 'Message sent',
-            'data' => $message->load('user'),
+            'data' => $messageData,
         ]);
     }
+
 
     // Fetch messages (optionally filter by event)y
    public function fetchMessages(Request $request)
     {
         $matchId = $request->query('match_id');
-        $after   = $request->query('after'); // incremental polling support
 
-        $query = ChatMessage::with('user')->where('is_hidden', false);
+        // 🔒 Validate "after"
+        $after = is_numeric($request->query('after'))
+            ? (int) $request->query('after')
+            : null;
 
+        $query = ChatMessage::with('user')
+            ->where('is_hidden', false);
+
+        // 🎯 Match or Global
         if ($matchId) {
             $query->where('match_id', $matchId);
         } else {
             $query->whereNull('match_id');
         }
 
-        // If after is provided, only return new messages
+        // 📩 Incremental polling
         if ($after) {
-            $query->where('id', '>', $after);
-            $messages = $query->oldest()->get();
+            $messages = $query
+                ->where('id', '>', $after)
+                ->orderBy('id', 'asc')
+                ->limit(100)
+                ->get();
         } else {
-            $messages = $query->latest()->take(50)->get()->reverse()->values();
+            $messages = $query
+                ->orderBy('id', 'desc')
+                ->limit(50)
+                ->get()
+                ->reverse()
+                ->values();
         }
 
-        DB::table('chat_presence')->updateOrInsert(
-            [
-                'user_id' => auth()->id(),
-                'match_id' => $matchId
-            ],
-            [
-                'last_seen' => now()
-            ]
-        );
+        // ⚡ Throttled presence update
+        if (rand(1, 3) === 1) {
+            DB::table('chat_presence')->updateOrInsert(
+                [
+                    'user_id' => auth()->id(),
+                    'match_id' => $matchId
+                ],
+                [
+                    'last_seen' => now()
+                ]
+            );
+        }
 
-       $activeFans = DB::table('chat_presence')
-        ->where('last_seen', '>=', now()->subSeconds(30))
-        ->when($matchId, fn($q) => $q->where('match_id', $matchId),
-                        fn($q) => $q->whereNull('match_id'))
-        ->count();
+        // 👥 Active fans count
+        $activeFans = DB::table('chat_presence')
+            ->where('last_seen', '>=', now()->subSeconds(30))
+            ->when(
+                $matchId,
+                fn($q) => $q->where('match_id', $matchId),
+                fn($q) => $q->whereNull('match_id')
+            )
+            ->count();
 
-
+            $typingUsers = DB::table('chat_typing')
+    ->join('users', 'users.id', '=', 'chat_typing.user_id')
+    ->where('chat_typing.updated_at', '>=', now()->subSeconds(5))
+    ->when(
+        $matchId,
+        fn($q) => $q->where('match_id', $matchId),
+        fn($q) => $q->whereNull('match_id')
+    )
+    ->where('chat_typing.user_id', '!=', auth()->id())
+    ->pluck('users.name');
 
         return response()->json([
             'messages' => $messages,
-            'fans' => $activeFans
+            'fans' => $activeFans,
+            'typing' => $typingUsers
         ]);
     }
 
@@ -206,41 +251,63 @@ class ChatController extends Controller
         return response()->json($warnings);
     }
 
-    public function rooms()
-        {
-            $user = Auth::user();
+  public function rooms()
+{
+    $user = Auth::user();
 
-            $leagueIds = $user->leagues()->pluck('leagues.id');
-            $teamIds   = $user->teams()->pluck('teams.id');
+    // ✅ Get unique team IDs (defensive safety)
+    $teamIds = $user->teams()
+        ->pluck('teams.id')
+        ->unique()
+        ->values();
 
-            $query = Fixture::with(['homeTeam', 'awayTeam']);
+    // 🌍 Always include Global Chat
+    $rooms = [
+        ['id' => null, 'name' => '🌍 Global Chat']
+    ];
 
-            if ($teamIds->isNotEmpty()) {
-                $query->where(function ($q) use ($teamIds) {
-                    $q->whereIn('home_team_id', $teamIds)
-                    ->orWhereIn('away_team_id', $teamIds);
-                });
-            } elseif ($leagueIds->isNotEmpty()) {
-                $query->whereIn('league_id', $leagueIds);
-            }
+    // 🚨 No teams selected → only global
+    if ($teamIds->isEmpty()) {
+        return response()->json($rooms);
+    }
 
-            $fixtures = $query->orderByDesc('kickoff_at')
-                            ->limit(10)
-                            ->get();
+    // 🎯 Fetch matches for ALL selected teams
+    $fixtures = Fixture::with(['homeTeam', 'awayTeam'])
+        ->where(function ($q) use ($teamIds) {
+            $q->whereIn('home_team_id', $teamIds)
+              ->orWhereIn('away_team_id', $teamIds);
+        })
+        ->orderByDesc('kickoff_at')
+        ->limit(10)
+        ->get();
 
-            $rooms = [
-                ['id' => null, 'name' => '🌍 Global Chat']
-            ];
+    // 🧱 Build chat rooms
+    foreach ($fixtures as $fixture) {
+        $rooms[] = [
+            'id' => $fixture->id,
+            'name' => "{$fixture->homeTeam->name} vs {$fixture->awayTeam->name}"
+        ];
+    }
 
-            foreach ($fixtures as $fixture) {
-                $rooms[] = [
-                    'id' => $fixture->id,
-                    'name' => "{$fixture->homeTeam->name} vs {$fixture->awayTeam->name}"
-                ];
-            }
+    return response()->json($rooms);
+}
 
-            return response()->json($rooms);
-        }
+    public function typing(Request $request)
+    {
+        $user = auth()->user();
+
+        DB::table('chat_typing')->updateOrInsert(
+            [
+                'user_id' => $user->id,
+                'match_id' => $request->match_id
+            ],
+            [
+                'updated_at' => now()
+            ]
+        );
+
+        return response()->json(['status' => 'ok']);
+    }
 
 
 

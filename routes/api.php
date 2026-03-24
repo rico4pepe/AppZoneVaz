@@ -8,9 +8,12 @@ use App\Http\Controllers\SportMonksController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\PollVoteController;
 use App\Http\Controllers\QuizController;
+use App\Http\Controllers\TriviaController;
 use App\Http\Controllers\Api\MatchController;
 use App\Http\Controllers\Api\LeagueController;
-
+use App\Http\Controllers\ContentFeedController;
+use App\Http\Controllers\FeedInteractionController;
+use App\Http\Controllers\LeaderboardController;
 /*
 |--------------------------------------------------------------------------
 | API Routes
@@ -67,8 +70,21 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/quizzes', [QuizController::class, 'list']);
     Route::post('/quiz/{content}/answer', [QuizController::class, 'submitSingleAnswer']);
     Route::get('/quiz/{id}/check-answered', [QuizController::class, 'checkAnswered']);
+    // Route to handle trivia
+    Route::post('/trivia/{content}/answer', [TriviaController::class, 'answer']);
+    Route::get('/trivia/{id}/check-answered', [TriviaController::class, 'checkAnswered']);
 
-      
+    //Typing indicator
+    Route::post('/chat/typing', [ChatController::class, 'typing']);
+
+    // Unified Content Feed
+    Route::get('/feed', [ContentFeedController::class, 'index']);
+    Route::post('/feed/interact', [FeedInteractionController::class, 'interact']);
+
+      // Leaderboard
+        Route::get('/leaderboard', [LeaderboardController::class, 'index']);
+        Route::get('/leaderboard/me', [LeaderboardController::class, 'myRank']);
+
 
 
 });

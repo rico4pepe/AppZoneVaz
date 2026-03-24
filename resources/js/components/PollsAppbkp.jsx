@@ -12,38 +12,32 @@ export default function PollApp() {
     const selectedPoll = polls[pollIndex] || null;
     const isVoted = selectedPoll?.hasVoted;
 
-    // 🚀 Load polls once
-    useEffect(() => {
+    const loadPolls = async () => {
         if (!token) return;
 
-        const controller = new AbortController();
+        setLoading(true);
 
-        const loadPolls = async () => {
-            try {
-                const res = await fetch(`${API}/polls`, {
-                    headers: {
-                        'Authorization': `Bearer ${token}`
-                    },
-                    signal: controller.signal
-                });
-
-                const data = await res.json();
-                setPolls(data);
-            } catch (error) {
-                if (error.name !== 'AbortError') {
-                    console.error("Error loading polls", error);
+        try {
+            const res = await fetch(`${API}/polls`, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 }
-            } finally {
-                setLoading(false);
-            }
-        };
+            });
 
+            const data = await res.json();
+            setPolls(data);
+        } catch (error) {
+            console.error("Error loading polls", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         loadPolls();
-
-        return () => controller.abort();
     }, [token]);
 
-    // 🚀 Optimized vote (no full reload)
     const submitVote = async () => {
         if (!selectedOption) return alert("Please select an option");
 
@@ -63,26 +57,8 @@ export default function PollApp() {
             const data = await res.json();
 
             if (res.ok) {
-                // Fetch only results for THIS poll
-                const resultRes = await fetch(`${API}/poll/${selectedPoll.id}/results`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-
-                const resultData = await resultRes.json();
-
-                // 🔥 Update ONLY current poll
-                setPolls(prev =>
-                    prev.map((poll, index) =>
-                        index === pollIndex
-                            ? {
-                                ...poll,
-                                hasVoted: true,
-                                results: resultData.results
-                            }
-                            : poll
-                    )
-                );
-
+                // Reload everything from backend (single source of truth)
+                await loadPolls();
                 setSelectedOption(null);
             } else {
                 alert(data.message || "Failed to vote.");
@@ -94,7 +70,6 @@ export default function PollApp() {
     };
 
     if (loading) return <div>Loading poll...</div>;
-    console.log('Selected Poll:', selectedPoll);
     if (!selectedPoll) return <div>No polls available right now.</div>;
 
     return (
@@ -114,40 +89,41 @@ export default function PollApp() {
                                     className="form-check-input"
                                     type="radio"
                                     name="pollOption"
+                                    value={option.id}
+                                    id={`option-${option.id}`}
                                     onChange={() => setSelectedOption(option.id)}
                                 />
-                                <label className="form-check-label">
+                                <label className="form-check-label" htmlFor={`option-${option.id}`}>
                                     {option.option_text}
                                 </label>
                             </div>
                         ))}
 
-                        <button
-                            className="btn btn-primary mt-3"
-                            onClick={submitVote}
-                            disabled={!selectedOption}
-                        >
+                        <button className="btn btn-primary mt-3" onClick={submitVote}>
                             Submit Vote
                         </button>
                     </>
                 ) : (
                     <>
-                        <h6>Results</h6>
+                        <h6>Thank you for voting! Here are the results:</h6>
 
                         {selectedPoll.results?.map(result => (
                             <div key={result.option_id} className="mb-2">
                                 <div className="d-flex justify-content-between mb-1">
                                     <strong>{result.option_text}</strong>
                                     <small>
-                                        {result.percentage}% ({result.votes})
+                                        {result.percentage}% ({result.votes} vote{result.votes !== 1 ? 's' : ''})
                                     </small>
                                 </div>
 
                                 <div className="progress">
                                     <div
                                         className="progress-bar bg-success"
+                                        role="progressbar"
                                         style={{ width: `${result.percentage || 0}%` }}
-                                    />
+                                    >
+                                        {result.percentage || 0}%
+                                    </div>
                                 </div>
                             </div>
                         ))}
@@ -159,7 +135,7 @@ export default function PollApp() {
                         className="btn btn-outline-secondary"
                         disabled={pollIndex === 0}
                         onClick={() => {
-                            setPollIndex(i => i - 1);
+                            setPollIndex(pollIndex - 1);
                             setSelectedOption(null);
                         }}
                     >
@@ -170,7 +146,7 @@ export default function PollApp() {
                         className="btn btn-outline-primary"
                         disabled={pollIndex === polls.length - 1}
                         onClick={() => {
-                            setPollIndex(i => i + 1);
+                            setPollIndex(pollIndex + 1);
                             setSelectedOption(null);
                         }}
                     >

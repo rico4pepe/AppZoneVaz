@@ -12,34 +12,93 @@ class LeaderboardController extends Controller
 {
     public function index(Request $request)
     {
-        $activityType = $request->query('type'); // quiz_completed, poll_voted, etc.
-        $days = $request->query('days'); // e.g., 7 for last 7 days
+        $activityType = $request->query('type');
+        $days = $request->query('days');
 
-        $query = UserActivity::select('user_id', DB::raw('SUM(points) as total_points'))
-            ->groupBy('user_id')
+        $query = UserActivity::query()
+            ->select(
+                'users.id as user_id',
+                'users.name',
+                DB::raw('SUM(user_activities.points) as total_points')
+            )
+            ->join('users', 'users.id', '=', 'user_activities.user_id')
+            ->groupBy('users.id', 'users.name')
             ->orderByDesc('total_points');
 
+        // 🔍 Filter by activity type
         if ($activityType) {
-            $query->where('activity_type', $activityType);
+            $query->where('user_activities.activity_type', $activityType);
         }
 
+        // 🔍 Filter by time range
         if ($days) {
-            $query->where('created_at', '>=', now()->subDays($days));
+            $query->where('user_activities.created_at', '>=', now()->subDays($days));
         }
 
-        $leaderboard = $query->take(10)->get()->map(function ($row) {
-            $user = User::find($row->user_id);
+        $leaders = $query->limit(10)->get();
 
+        // 🏆 Attach rank
+        $leaders = $leaders->values()->map(function ($user, $index) {
             return [
-                'user_id' => $user->id,
-                'name' => $user->name ?? 'Anonymous',
-                'points' => $row->total_points,
+                'user_id' => $user->user_id,
+                'name'    => $user->name ?? 'Anonymous',
+                'points'  => (int) $user->total_points,
+                'rank'    => $index + 1,
             ];
         });
 
         return response()->json([
-            'leaderboard' => $leaderboard,
+            'leaderboard' => $leaders,
         ]);
+    }
+
+    public function myRank(Request $request)
+    {
+        $userId = auth()->id();
+
+        $activityType = $request->query('type');
+        $days = $request->query('days');
+
+        // 🔹 Base query (same as leaderboard)
+        $baseQuery = \App\Models\UserActivity::query()
+            ->select(
+                'users.id as user_id',
+                DB::raw('SUM(user_activities.points) as total_points')
+            )
+            ->join('users', 'users.id', '=', 'user_activities.user_id')
+            ->groupBy('users.id');
+
+        if ($activityType) {
+            $baseQuery->where('user_activities.activity_type', $activityType);
+        }
+
+        if ($days) {
+            $baseQuery->where('user_activities.created_at', '>=', now()->subDays($days));
+        }
+
+        // 🔹 Get ranked list
+        $users = $baseQuery
+            ->orderByDesc('total_points')
+            ->get();
+
+        // 🔹 Find current user
+        $index = $users->search(fn($u) => $u->user_id == $userId);
+
+        if ($index === false) {
+             return response()->json([
+            'rank'        => null,
+            'total_users' => $users->count(),
+            'points'      => 0,
+            'label'       => "You are not ranked yet",
+        ]);
+        }
+
+       return response()->json([
+        'rank'        => $index + 1,
+        'total_users' => $users->count(),
+        'points'      => (int) $users[$index]->total_points,
+        'label'       => "You are ranked " . ($index + 1) . " out of " . $users->count(),
+    ]);
     }
 }
 
